@@ -1,0 +1,20 @@
+{
+  "author": {
+    "name": "Eddie Israelsky",
+    "role": "IT Administrator",
+    "email": "eddieiskl@gmail.com",
+    "website": "",
+    "github": "github.com/eddieiskl",
+    "linkedin": ""
+  },
+  "organisation": "",
+  "tagline": "Provision a new Mac in minutes, not an afternoon.",
+  "copyright": "© 2026 Eddie Israelsky. All rights reserved.",
+  "license": "Internal tool — not for redistribution.",
+  "supportNote": "Found a broken download or want an app added? Get in touch.",
+  "acknowledgements": [
+    "Apps are downloaded from each vendor's own servers.",
+    "Homebrew is used where a vendor publishes no stable direct link.",
+    "Icons are fetched from vendor sites; no third-party icon service is used."
+  ]
+}

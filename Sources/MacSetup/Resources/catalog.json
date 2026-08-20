@@ -1,0 +1,4578 @@
+{
+ "schemaVersion": 1,
+ "updated": "2026-08-19",
+ "categories": [
+  {
+   "id": "browsers",
+   "name": "Browsers",
+   "symbol": "globe",
+   "order": 1
+  },
+  {
+   "id": "communication",
+   "name": "Communication",
+   "symbol": "bubble.left.and.bubble.right",
+   "order": 2
+  },
+  {
+   "id": "productivity",
+   "name": "Productivity",
+   "symbol": "checkmark.circle",
+   "order": 3
+  },
+  {
+   "id": "developer",
+   "name": "Developer Tools",
+   "symbol": "hammer",
+   "order": 4
+  },
+  {
+   "id": "ai",
+   "name": "AI & Assistants",
+   "symbol": "sparkles",
+   "order": 5
+  },
+  {
+   "id": "cli",
+   "name": "Terminal & CLI",
+   "symbol": "terminal",
+   "order": 6
+  },
+  {
+   "id": "cloud",
+   "name": "Cloud & Storage",
+   "symbol": "icloud",
+   "order": 7
+  },
+  {
+   "id": "security",
+   "name": "Security & Privacy",
+   "symbol": "lock.shield",
+   "order": 8
+  },
+  {
+   "id": "vpn",
+   "name": "VPN & Networking",
+   "symbol": "lock.icloud",
+   "order": 9
+  },
+  {
+   "id": "remote",
+   "name": "Remote & IT Admin",
+   "symbol": "network",
+   "order": 10
+  },
+  {
+   "id": "media",
+   "name": "Media",
+   "symbol": "play.rectangle",
+   "order": 11
+  },
+  {
+   "id": "design",
+   "name": "Design & Creative",
+   "symbol": "paintbrush",
+   "order": 12
+  },
+  {
+   "id": "utilities",
+   "name": "Utilities",
+   "symbol": "wrench.and.screwdriver",
+   "order": 13
+  },
+  {
+   "id": "virtualization",
+   "name": "Virtualization",
+   "symbol": "cube.box",
+   "order": 14
+  }
+ ],
+ "apps": [
+  {
+   "id": "anythingllm",
+   "name": "AnythingLLM",
+   "category": "ai",
+   "vendor": "Mintplex Labs",
+   "summary": "Private desktop AI chat that can index your own documents.",
+   "homepage": "https://anythingllm.com/",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "ai",
+    "open-source",
+    "free",
+    "business"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "cask": "anythingllm"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "chatgpt",
+   "name": "ChatGPT",
+   "category": "ai",
+   "vendor": "OpenAI",
+   "summary": "OpenAI's official desktop app, with a system-wide launcher shortcut.",
+   "homepage": "https://openai.com/chatgpt/download/",
+   "bundleId": "com.openai.chat",
+   "teamId": "2DC432GLL2",
+   "tags": [
+    "popular",
+    "ai",
+    "essential"
+   ],
+   "license": "freemium",
+   "source": {
+    "kind": "direct",
+    "format": "dmg",
+    "url": "https://persistent.oaistatic.com/sidekick/public/ChatGPT.dmg"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "chatgpt"
+   },
+   "icon": null,
+   "selfUpdates": "its own updater",
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "cherry-studio",
+   "name": "Cherry Studio",
+   "category": "ai",
+   "vendor": "Cherry Studio",
+   "summary": "One desktop client for many LLM providers and local models.",
+   "homepage": "https://cherry-ai.com/",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "ai",
+    "open-source",
+    "free"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "cask": "cherry-studio"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "claude",
+   "name": "Claude",
+   "category": "ai",
+   "vendor": "Anthropic",
+   "summary": "Anthropic's official desktop app for Claude, with MCP connector support.",
+   "homepage": "https://claude.com/download",
+   "bundleId": "com.anthropic.claudefordesktop",
+   "teamId": "Q6L2SF6YDW",
+   "tags": [
+    "popular",
+    "ai",
+    "essential"
+   ],
+   "license": "freemium",
+   "source": {
+    "kind": "direct",
+    "format": "dmg",
+    "url": "https://storage.googleapis.com/osprey-downloads-c02f6a0d-347c-492b-a752-3e0651722e97/nest/Claude.dmg"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "claude"
+   },
+   "icon": null,
+   "selfUpdates": "its own updater",
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "diffusionbee",
+   "name": "DiffusionBee",
+   "category": "ai",
+   "vendor": "DiffusionBee",
+   "summary": "Run Stable Diffusion image generation locally.",
+   "homepage": "https://diffusionbee.com/",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "ai",
+    "free"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "cask": "diffusionbee"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "elephas",
+   "name": "Elephas",
+   "category": "ai",
+   "vendor": "Elephas",
+   "summary": "Personal AI writing assistant that works system-wide.",
+   "homepage": "https://elephas.app/",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "ai"
+   ],
+   "license": "commercial",
+   "source": {
+    "kind": "brew",
+    "cask": "elephas"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "gpt4all",
+   "name": "GPT4All",
+   "category": "ai",
+   "vendor": "Nomic AI",
+   "summary": "Runs open LLMs locally on ordinary hardware.",
+   "homepage": "https://www.nomic.ai/gpt4all",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "ai",
+    "open-source",
+    "free"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "cask": "gpt4all"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": true,
+   "caskInstaller": true
+  },
+  {
+   "id": "jan",
+   "name": "Jan",
+   "category": "ai",
+   "vendor": "Menlo Research",
+   "summary": "Offline-first AI chat that runs models entirely on your machine.",
+   "homepage": "https://jan.ai/",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "ai",
+    "open-source",
+    "free",
+    "privacy"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "cask": "jan"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "lm-studio",
+   "name": "LM Studio",
+   "category": "ai",
+   "vendor": "LM Studio",
+   "summary": "Discover, download and run local LLMs with a GUI and an OpenAI-compatible server.",
+   "homepage": "https://lmstudio.ai/",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "ai",
+    "free"
+   ],
+   "license": "freeware",
+   "source": {
+    "kind": "brew",
+    "cask": "lm-studio"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "macwhisper",
+   "name": "MacWhisper",
+   "category": "ai",
+   "vendor": "Good Snooze",
+   "summary": "Local Whisper transcription for audio and video, no cloud upload.",
+   "homepage": "https://goodsnooze.gumroad.com/l/macwhisper",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "ai",
+    "privacy"
+   ],
+   "license": "freemium",
+   "source": {
+    "kind": "brew",
+    "cask": "macwhisper"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "msty",
+   "name": "Msty",
+   "category": "ai",
+   "vendor": "Msty",
+   "summary": "Local and remote LLMs in one client, with split-chat comparison.",
+   "homepage": "https://msty.app/",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "ai"
+   ],
+   "license": "freemium",
+   "source": {
+    "kind": "brew",
+    "cask": "msty"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "ollama",
+   "name": "Ollama",
+   "category": "ai",
+   "vendor": "Ollama",
+   "summary": "Run Llama, Mistral, Gemma and other models locally. Includes the CLI.",
+   "homepage": "https://ollama.com/",
+   "bundleId": "com.electron.ollama",
+   "teamId": null,
+   "tags": [
+    "ai",
+    "free",
+    "open-source",
+    "popular"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "direct",
+    "format": "dmg",
+    "url": "https://ollama.com/download/Ollama.dmg"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "ollama-app"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "perplexity",
+   "name": "Perplexity",
+   "category": "ai",
+   "vendor": "Perplexity AI",
+   "summary": "AI answer engine with cited sources.",
+   "homepage": "https://www.perplexity.ai/",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "ai"
+   ],
+   "license": "freemium",
+   "source": {
+    "kind": "brew",
+    "cask": "perplexity"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "superwhisper",
+   "name": "superwhisper",
+   "category": "ai",
+   "vendor": "superwhisper",
+   "summary": "System-wide voice dictation with local models and LLM clean-up.",
+   "homepage": "https://superwhisper.com/",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "ai",
+    "privacy"
+   ],
+   "license": "freemium",
+   "source": {
+    "kind": "brew",
+    "cask": "superwhisper"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "witsy",
+   "name": "Witsy",
+   "category": "ai",
+   "vendor": "Nicolas Bonamy",
+   "summary": "Bring-your-own-key assistant that works across every app.",
+   "homepage": "https://witsyai.com/",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "ai",
+    "open-source",
+    "free"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "cask": "witsy"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "arc",
+   "name": "Arc",
+   "category": "browsers",
+   "vendor": "The Browser Company",
+   "summary": "Reimagined browser with spaces and split view.",
+   "homepage": "https://arc.net/",
+   "bundleId": "company.thebrowser.Browser",
+   "teamId": "S6N382Y83G",
+   "tags": [],
+   "license": "freeware",
+   "source": {
+    "kind": "direct",
+    "format": "dmg",
+    "url": "https://releases.arc.net/release/Arc-latest.dmg"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "arc"
+   },
+   "icon": null,
+   "selfUpdates": "its own updater",
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "brave-browser",
+   "name": "Brave",
+   "category": "browsers",
+   "vendor": "Brave Software",
+   "summary": "Chromium browser with ad and tracker blocking built in.",
+   "homepage": "https://brave.com/",
+   "bundleId": "com.brave.Browser",
+   "teamId": "KL8N8XSYF4",
+   "tags": [
+    "privacy",
+    "open-source"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "direct",
+    "format": "dmg",
+    "url": "https://referrals.brave.com/latest/Brave-Browser.dmg"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "brave-browser"
+   },
+   "icon": null,
+   "selfUpdates": "its own updater",
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "google-chrome",
+   "name": "Google Chrome",
+   "category": "browsers",
+   "vendor": "Google",
+   "summary": "The most widely deployed browser. Universal build.",
+   "homepage": "https://www.google.com/chrome/",
+   "bundleId": "com.google.Chrome",
+   "teamId": "EQHXZ8M8AV",
+   "tags": [
+    "essential",
+    "popular",
+    "business"
+   ],
+   "license": "freeware",
+   "source": {
+    "kind": "direct",
+    "format": "dmg",
+    "url": "https://dl.google.com/chrome/mac/universal/stable/GGRO/googlechrome.dmg"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "google-chrome"
+   },
+   "icon": "https://www.gstatic.com/images/branding/product/2x/chrome_48dp.png",
+   "selfUpdates": "Google Keystone",
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "microsoft-edge",
+   "name": "Microsoft Edge",
+   "category": "browsers",
+   "vendor": "Microsoft",
+   "summary": "Chromium browser with Entra ID / Intune integration.",
+   "homepage": "https://www.microsoft.com/edge",
+   "bundleId": "com.microsoft.edgemac",
+   "teamId": "UBF8T346G9",
+   "tags": [
+    "business",
+    "microsoft"
+   ],
+   "license": "freeware",
+   "source": {
+    "kind": "direct",
+    "format": "pkg",
+    "url": "https://go.microsoft.com/fwlink/?linkid=2093504"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "microsoft-edge"
+   },
+   "icon": "https://microsoftedge.microsoft.com/favicon.ico",
+   "selfUpdates": "Microsoft AutoUpdate",
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "firefox",
+   "name": "Mozilla Firefox",
+   "category": "browsers",
+   "vendor": "Mozilla",
+   "summary": "Independent, privacy-focused browser.",
+   "homepage": "https://www.mozilla.org/firefox/",
+   "bundleId": "org.mozilla.firefox",
+   "teamId": "43AQ936H96",
+   "tags": [
+    "popular",
+    "open-source"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "direct",
+    "format": "dmg",
+    "url": "https://download.mozilla.org/?product=firefox-latest-ssl&os=osx&lang=en-US"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "firefox"
+   },
+   "icon": null,
+   "selfUpdates": "its own updater",
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "tor-browser",
+   "name": "Tor Browser",
+   "category": "browsers",
+   "vendor": "The Tor Project",
+   "summary": "Anonymised browsing over the Tor network.",
+   "homepage": "https://www.torproject.org/",
+   "bundleId": "org.torproject.torbrowser",
+   "teamId": "MADPSAYN6T",
+   "tags": [
+    "privacy",
+    "open-source"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "cask": "tor-browser"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "vivaldi",
+   "name": "Vivaldi",
+   "category": "browsers",
+   "vendor": "Vivaldi Technologies",
+   "summary": "Highly customisable power-user browser.",
+   "homepage": "https://vivaldi.com/",
+   "bundleId": "com.vivaldi.Vivaldi",
+   "teamId": "4XF3XNRN6Y",
+   "tags": [],
+   "license": "freeware",
+   "source": {
+    "kind": "brew",
+    "cask": "vivaldi"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "aider",
+   "name": "Aider",
+   "category": "cli",
+   "vendor": "Aider",
+   "summary": "AI pair programming in your terminal, driven by your git repo.",
+   "homepage": "https://aider.chat/",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "ai",
+    "open-source"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "formula": "aider"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "azure-cli",
+   "name": "Azure CLI",
+   "category": "cli",
+   "vendor": "Microsoft",
+   "summary": "Manage Azure resources from the terminal.",
+   "homepage": "https://learn.microsoft.com/cli/azure/",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "microsoft",
+    "open-source",
+    "business"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "formula": "azure-cli"
+   },
+   "icon": "https://github.com/Azure.png?size=128",
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "bat",
+   "name": "bat",
+   "category": "cli",
+   "vendor": "David Peter",
+   "summary": "cat with syntax highlighting and Git integration.",
+   "homepage": "https://github.com/sharkdp/bat",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "open-source"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "formula": "bat"
+   },
+   "icon": "none",
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "eza",
+   "name": "eza",
+   "category": "cli",
+   "vendor": "eza maintainers",
+   "summary": "Modern replacement for ls.",
+   "homepage": "https://eza.rocks/",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "open-source"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "formula": "eza"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "fd",
+   "name": "fd",
+   "category": "cli",
+   "vendor": "David Peter",
+   "summary": "Friendly alternative to find.",
+   "homepage": "https://github.com/sharkdp/fd",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "open-source"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "formula": "fd"
+   },
+   "icon": "none",
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "fzf",
+   "name": "fzf",
+   "category": "cli",
+   "vendor": "Junegunn Choi",
+   "summary": "Command-line fuzzy finder.",
+   "homepage": "https://github.com/junegunn/fzf",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "open-source"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "formula": "fzf"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "gemini-cli",
+   "name": "Gemini CLI",
+   "category": "cli",
+   "vendor": "Google",
+   "summary": "Google's open-source Gemini agent for the terminal.",
+   "homepage": "https://github.com/google-gemini/gemini-cli",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "ai",
+    "open-source"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "formula": "gemini-cli"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "git",
+   "name": "Git",
+   "category": "cli",
+   "vendor": "Software Freedom Conservancy",
+   "summary": "Version control. Newer than the Xcode CLT build.",
+   "homepage": "https://git-scm.com/",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "essential",
+    "open-source"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "formula": "git"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "gh",
+   "name": "GitHub CLI",
+   "category": "cli",
+   "vendor": "GitHub",
+   "summary": "Work with pull requests and issues from the terminal.",
+   "homepage": "https://cli.github.com/",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "open-source"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "formula": "gh"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "go",
+   "name": "Go",
+   "category": "cli",
+   "vendor": "Google",
+   "summary": "The Go programming language toolchain.",
+   "homepage": "https://go.dev/",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "open-source"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "formula": "go"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "homebrew",
+   "name": "Homebrew",
+   "category": "cli",
+   "vendor": "Homebrew",
+   "summary": "The macOS package manager. Installed first when any brew-backed app is queued.",
+   "homepage": "https://brew.sh/",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "essential",
+    "free",
+    "open-source"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "script",
+    "url": "https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh",
+    "verify": "brew"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "htop",
+   "name": "htop",
+   "category": "cli",
+   "vendor": "htop maintainers",
+   "summary": "Interactive process viewer.",
+   "homepage": "https://htop.dev/",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "open-source"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "formula": "htop"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "jq",
+   "name": "jq",
+   "category": "cli",
+   "vendor": "jq maintainers",
+   "summary": "Command-line JSON processor.",
+   "homepage": "https://jqlang.github.io/jq/",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "open-source"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "formula": "jq"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "llm",
+   "name": "llm",
+   "category": "cli",
+   "vendor": "Simon Willison",
+   "summary": "Query LLMs from the command line and log every response.",
+   "homepage": "https://llm.datasette.io/",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "ai",
+    "open-source"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "formula": "llm"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "mas",
+   "name": "mas",
+   "category": "cli",
+   "vendor": "mas-cli",
+   "summary": "Install Mac App Store apps from the command line.",
+   "homepage": "https://github.com/mas-cli/mas",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "open-source",
+    "business"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "formula": "mas"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "neovim",
+   "name": "Neovim",
+   "category": "cli",
+   "vendor": "Neovim",
+   "summary": "Hyperextensible Vim-based editor.",
+   "homepage": "https://neovim.io/",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "open-source"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "formula": "neovim"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "node",
+   "name": "Node.js",
+   "category": "cli",
+   "vendor": "OpenJS Foundation",
+   "summary": "JavaScript runtime and npm.",
+   "homepage": "https://nodejs.org/",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "essential",
+    "open-source"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "formula": "node"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "oh-my-zsh",
+   "name": "Oh My Zsh",
+   "category": "cli",
+   "vendor": "Oh My Zsh",
+   "summary": "Zsh configuration framework with themes and plugins.",
+   "homepage": "https://ohmyz.sh/",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "open-source"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "script",
+    "url": "https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh",
+    "verify": null,
+    "env": {
+     "RUNZSH": "no",
+     "CHSH": "no"
+    }
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "powershell",
+   "name": "PowerShell",
+   "category": "cli",
+   "vendor": "Microsoft",
+   "summary": "Cross-platform PowerShell 7 shell.",
+   "homepage": "https://learn.microsoft.com/powershell/",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "microsoft",
+    "open-source",
+    "business"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "formula": "powershell"
+   },
+   "icon": "https://github.com/PowerShell.png?size=128",
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "python",
+   "name": "Python 3",
+   "category": "cli",
+   "vendor": "Python Software Foundation",
+   "summary": "Python interpreter and pip.",
+   "homepage": "https://www.python.org/",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "essential",
+    "open-source"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "formula": "python@3.13"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "ripgrep",
+   "name": "ripgrep",
+   "category": "cli",
+   "vendor": "Andrew Gallant",
+   "summary": "Extremely fast recursive grep.",
+   "homepage": "https://github.com/BurntSushi/ripgrep",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "open-source"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "formula": "ripgrep"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "tmux",
+   "name": "tmux",
+   "category": "cli",
+   "vendor": "tmux maintainers",
+   "summary": "Terminal multiplexer.",
+   "homepage": "https://github.com/tmux/tmux",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "open-source"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "formula": "tmux"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "wget",
+   "name": "wget",
+   "category": "cli",
+   "vendor": "GNU",
+   "summary": "Non-interactive network downloader.",
+   "homepage": "https://www.gnu.org/software/wget/",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "open-source"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "formula": "wget"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "backblaze",
+   "name": "Backblaze",
+   "category": "cloud",
+   "vendor": "Backblaze",
+   "summary": "Unlimited cloud backup.",
+   "homepage": "https://www.backblaze.com/",
+   "bundleId": "com.backblaze.bzbmenu",
+   "teamId": null,
+   "tags": [
+    "business"
+   ],
+   "license": "commercial",
+   "source": {
+    "kind": "brew",
+    "cask": "backblaze"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": true,
+   "caskInstaller": true
+  },
+  {
+   "id": "box-drive",
+   "name": "Box Drive",
+   "category": "cloud",
+   "vendor": "Box",
+   "summary": "Enterprise content management sync client.",
+   "homepage": "https://www.box.com/resources/downloads",
+   "bundleId": "com.box.desktop",
+   "teamId": "M683GB7CPW",
+   "tags": [
+    "business"
+   ],
+   "license": "commercial",
+   "source": {
+    "kind": "brew",
+    "cask": "box-drive"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": true,
+   "caskInstaller": null
+  },
+  {
+   "id": "cyberduck",
+   "name": "Cyberduck",
+   "category": "cloud",
+   "vendor": "iterate GmbH",
+   "summary": "FTP, SFTP, S3 and cloud storage browser.",
+   "homepage": "https://cyberduck.io/",
+   "bundleId": "ch.sudo.cyberduck",
+   "teamId": null,
+   "tags": [
+    "open-source",
+    "business"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "cask": "cyberduck"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "dropbox",
+   "name": "Dropbox",
+   "category": "cloud",
+   "vendor": "Dropbox Inc.",
+   "summary": "File sync and sharing.",
+   "homepage": "https://www.dropbox.com/",
+   "bundleId": "com.getdropbox.dropbox",
+   "teamId": "G7HH3F8CAK",
+   "tags": [
+    "business",
+    "popular"
+   ],
+   "license": "freemium",
+   "source": {
+    "kind": "direct",
+    "format": "dmg",
+    "url": "https://www.dropbox.com/download?plat=mac"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "dropbox"
+   },
+   "icon": null,
+   "selfUpdates": "its own updater",
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "google-drive",
+   "name": "Google Drive",
+   "category": "cloud",
+   "vendor": "Google",
+   "summary": "Drive for desktop with file streaming.",
+   "homepage": "https://www.google.com/drive/download/",
+   "bundleId": "com.google.GoogleDrive",
+   "teamId": "EQHXZ8M8AV",
+   "tags": [
+    "business",
+    "popular"
+   ],
+   "license": "freemium",
+   "source": {
+    "kind": "direct",
+    "format": "dmg",
+    "url": "https://dl.google.com/drive-file-stream/GoogleDrive.dmg"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "google-drive"
+   },
+   "icon": "https://www.gstatic.com/images/branding/product/2x/drive_2020q4_48dp.png",
+   "selfUpdates": "Google Keystone",
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "onedrive",
+   "name": "Microsoft OneDrive",
+   "category": "cloud",
+   "vendor": "Microsoft",
+   "summary": "OneDrive and SharePoint sync client.",
+   "homepage": "https://www.microsoft.com/microsoft-365/onedrive/",
+   "bundleId": "com.microsoft.OneDrive",
+   "teamId": "UBF8T346G9",
+   "tags": [
+    "business",
+    "microsoft"
+   ],
+   "license": "freemium",
+   "source": {
+    "kind": "direct",
+    "format": "pkg",
+    "url": "https://go.microsoft.com/fwlink/?linkid=823060"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "onedrive"
+   },
+   "icon": "https://res-1.cdn.office.net/files/fabric-cdn-prod_20221209.001/assets/brand-icons/product/png/onedrive_48x1.png",
+   "selfUpdates": "Microsoft AutoUpdate",
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "synology-drive",
+   "name": "Synology Drive Client",
+   "category": "cloud",
+   "vendor": "Synology",
+   "summary": "Sync with a Synology NAS.",
+   "homepage": "https://www.synology.com/",
+   "bundleId": "com.synology.CloudStation",
+   "teamId": null,
+   "tags": [
+    "business"
+   ],
+   "license": "freeware",
+   "source": {
+    "kind": "brew",
+    "cask": "synology-drive"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": true,
+   "caskInstaller": null
+  },
+  {
+   "id": "webex",
+   "name": "Cisco Webex",
+   "category": "communication",
+   "vendor": "Cisco",
+   "summary": "Enterprise meetings and calling.",
+   "homepage": "https://www.webex.com/",
+   "bundleId": "Cisco-Systems.Spark",
+   "teamId": "DE8Y96K9QP",
+   "tags": [
+    "business"
+   ],
+   "license": "freemium",
+   "source": {
+    "kind": "brew",
+    "cask": "webex"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "discord",
+   "name": "Discord",
+   "category": "communication",
+   "vendor": "Discord Inc.",
+   "summary": "Voice, video and text chat.",
+   "homepage": "https://discord.com/",
+   "bundleId": "com.hnc.Discord",
+   "teamId": "53Q6R32WPB",
+   "tags": [
+    "popular"
+   ],
+   "license": "freemium",
+   "source": {
+    "kind": "direct",
+    "format": "dmg",
+    "url": "https://discord.com/api/download?platform=osx"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "discord"
+   },
+   "icon": null,
+   "selfUpdates": "its own updater",
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "microsoft-teams",
+   "name": "Microsoft Teams",
+   "category": "communication",
+   "vendor": "Microsoft",
+   "summary": "Teams (new client), universal package.",
+   "homepage": "https://www.microsoft.com/microsoft-teams/",
+   "bundleId": "com.microsoft.teams2",
+   "teamId": "UBF8T346G9",
+   "tags": [
+    "business",
+    "microsoft"
+   ],
+   "license": "freemium",
+   "source": {
+    "kind": "direct",
+    "format": "pkg",
+    "url": "https://go.microsoft.com/fwlink/?linkid=2249065"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "microsoft-teams"
+   },
+   "icon": "https://res-1.cdn.office.net/files/fabric-cdn-prod_20221209.001/assets/brand-icons/product/png/teams_48x1.png",
+   "selfUpdates": "Microsoft AutoUpdate",
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "signal",
+   "name": "Signal",
+   "category": "communication",
+   "vendor": "Signal Messenger",
+   "summary": "End-to-end encrypted messaging.",
+   "homepage": "https://signal.org/",
+   "bundleId": "org.whispersystems.signal-desktop",
+   "teamId": "U68MSDN6DR",
+   "tags": [
+    "privacy",
+    "open-source"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "cask": "signal"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "slack",
+   "name": "Slack",
+   "category": "communication",
+   "vendor": "Slack Technologies",
+   "summary": "Team messaging. Universal build straight from Slack's CDN.",
+   "homepage": "https://slack.com/downloads/mac",
+   "bundleId": "com.tinyspeck.slackmacgap",
+   "teamId": "BQR82RBBHL",
+   "tags": [
+    "essential",
+    "business",
+    "popular"
+   ],
+   "license": "freemium",
+   "source": {
+    "kind": "direct",
+    "format": "dmg",
+    "url": "https://slack.com/ssb/download-osx-universal"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "slack"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "telegram",
+   "name": "Telegram",
+   "category": "communication",
+   "vendor": "Telegram FZ-LLC",
+   "summary": "Cloud-based messaging.",
+   "homepage": "https://telegram.org/",
+   "bundleId": "ru.keepcoder.Telegram",
+   "teamId": "6N38VWS5BX",
+   "tags": [],
+   "license": "open-source",
+   "source": {
+    "kind": "direct",
+    "format": "dmg",
+    "url": "https://telegram.org/dl/macos"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "telegram"
+   },
+   "icon": null,
+   "selfUpdates": "its own updater",
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "whatsapp",
+   "name": "WhatsApp",
+   "category": "communication",
+   "vendor": "Meta",
+   "summary": "Native WhatsApp desktop client.",
+   "homepage": "https://www.whatsapp.com/download",
+   "bundleId": "desktop.WhatsApp",
+   "teamId": "57T9237FN3",
+   "tags": [
+    "popular"
+   ],
+   "license": "freeware",
+   "source": {
+    "kind": "brew",
+    "cask": "whatsapp"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "zoom",
+   "name": "Zoom",
+   "category": "communication",
+   "vendor": "Zoom Video Communications",
+   "summary": "Video meetings. Arch-specific installer packages.",
+   "homepage": "https://zoom.us/download",
+   "bundleId": "us.zoom.xos",
+   "teamId": "BJ4HAAB9B3",
+   "tags": [
+    "essential",
+    "business",
+    "popular"
+   ],
+   "license": "freemium",
+   "source": {
+    "kind": "direct",
+    "format": "pkg",
+    "urlArm64": "https://zoom.us/client/latest/zoomusInstallerFull.pkg?archType=arm64",
+    "urlX86": "https://zoom.us/client/latest/zoomusInstallerFull.pkg"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "zoom"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "adobe-creative-cloud",
+   "name": "Adobe Creative Cloud",
+   "category": "design",
+   "vendor": "Adobe",
+   "summary": "Installer for Photoshop, Illustrator, InDesign and the rest.",
+   "homepage": "https://www.adobe.com/creativecloud.html",
+   "bundleId": "com.adobe.acc.AdobeCreativeCloud",
+   "teamId": "JQ525L2MZD",
+   "tags": [
+    "business"
+   ],
+   "license": "commercial",
+   "source": {
+    "kind": "brew",
+    "cask": "adobe-creative-cloud"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": true,
+   "caskInstaller": true
+  },
+  {
+   "id": "affinity-designer",
+   "name": "Affinity Designer",
+   "category": "design",
+   "vendor": "Canva",
+   "summary": "One-off purchase vector design app.",
+   "homepage": "https://affinity.serif.com/",
+   "bundleId": "com.seriflabs.affinitydesigner2",
+   "teamId": null,
+   "tags": [],
+   "license": "commercial",
+   "source": {
+    "kind": "brew",
+    "cask": "affinity-designer"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "blender",
+   "name": "Blender",
+   "category": "design",
+   "vendor": "Blender Foundation",
+   "summary": "3D modelling, animation and rendering.",
+   "homepage": "https://www.blender.org/",
+   "bundleId": "org.blenderfoundation.blender",
+   "teamId": null,
+   "tags": [
+    "open-source",
+    "free"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "cask": "blender"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "figma",
+   "name": "Figma",
+   "category": "design",
+   "vendor": "Figma Inc.",
+   "summary": "Collaborative interface design.",
+   "homepage": "https://www.figma.com/downloads/",
+   "bundleId": "com.figma.Desktop",
+   "teamId": null,
+   "tags": [
+    "popular",
+    "business"
+   ],
+   "license": "freemium",
+   "source": {
+    "kind": "direct",
+    "format": "zip",
+    "urlArm64": "https://desktop.figma.com/mac-arm/Figma.zip",
+    "urlX86": "https://desktop.figma.com/mac/Figma.zip"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "figma"
+   },
+   "icon": null,
+   "selfUpdates": "its own updater",
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "gimp",
+   "name": "GIMP",
+   "category": "design",
+   "vendor": "GIMP Team",
+   "summary": "Free raster image editor.",
+   "homepage": "https://www.gimp.org/",
+   "bundleId": "org.gimp.gimp",
+   "teamId": null,
+   "tags": [
+    "open-source",
+    "free"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "cask": "gimp"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "imageoptim",
+   "name": "ImageOptim",
+   "category": "design",
+   "vendor": "Kornel Lesiński",
+   "summary": "Lossless image compression.",
+   "homepage": "https://imageoptim.com/mac",
+   "bundleId": "net.pornel.ImageOptim",
+   "teamId": null,
+   "tags": [
+    "free",
+    "open-source"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "cask": "imageoptim"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "inkscape",
+   "name": "Inkscape",
+   "category": "design",
+   "vendor": "Inkscape Project",
+   "summary": "Free vector graphics editor.",
+   "homepage": "https://inkscape.org/",
+   "bundleId": "org.inkscape.Inkscape",
+   "teamId": null,
+   "tags": [
+    "open-source",
+    "free"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "cask": "inkscape"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "sketch",
+   "name": "Sketch",
+   "category": "design",
+   "vendor": "Sketch B.V.",
+   "summary": "Native macOS vector design tool.",
+   "homepage": "https://www.sketch.com/",
+   "bundleId": "com.bohemiancoding.sketch3",
+   "teamId": null,
+   "tags": [],
+   "license": "commercial",
+   "source": {
+    "kind": "direct",
+    "format": "zip",
+    "url": "https://download.sketch.com/sketch.zip"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "sketch"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "dotnet-sdk",
+   "name": ".NET SDK",
+   "category": "developer",
+   "vendor": "Microsoft",
+   "summary": "Build and run .NET applications on macOS.",
+   "homepage": "https://dotnet.microsoft.com/",
+   "bundleId": "com.microsoft.dotnet.sdk",
+   "teamId": "UBF8T346G9",
+   "tags": [
+    "microsoft",
+    "open-source"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "cask": "dotnet-sdk"
+   },
+   "icon": "https://github.com/dotnet.png?size=128",
+   "selfUpdates": null,
+   "needsAdmin": true,
+   "caskInstaller": null
+  },
+  {
+   "id": "azure-data-studio",
+   "name": "Azure Data Studio",
+   "category": "developer",
+   "vendor": "Microsoft",
+   "summary": "Cross-platform client for SQL Server and Azure SQL.",
+   "homepage": "https://learn.microsoft.com/azure-data-studio/",
+   "bundleId": "com.azuredatastudio.oss",
+   "teamId": "UBF8T346G9",
+   "tags": [
+    "microsoft",
+    "business"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "cask": "azure-data-studio"
+   },
+   "icon": "none",
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "claude-code",
+   "name": "Claude Code",
+   "category": "developer",
+   "vendor": "Anthropic",
+   "summary": "Anthropic's agentic coding CLI. Installed via the official install script.",
+   "homepage": "https://claude.com/claude-code",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "cli",
+    "ai"
+   ],
+   "license": "commercial",
+   "source": {
+    "kind": "script",
+    "url": "https://claude.ai/install.sh",
+    "verify": "claude"
+   },
+   "icon": "none",
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "cursor",
+   "name": "Cursor",
+   "category": "developer",
+   "vendor": "Anysphere",
+   "summary": "AI-first code editor built on VS Code.",
+   "homepage": "https://www.cursor.com/",
+   "bundleId": "com.todesktop.230313mzl4w4u92",
+   "teamId": null,
+   "tags": [
+    "popular",
+    "ai"
+   ],
+   "license": "freemium",
+   "source": {
+    "kind": "brew",
+    "cask": "cursor"
+   },
+   "icon": null,
+   "selfUpdates": "its own updater",
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "docker-desktop",
+   "name": "Docker Desktop",
+   "category": "developer",
+   "vendor": "Docker Inc.",
+   "summary": "Containers on macOS. Arch-specific disk images.",
+   "homepage": "https://www.docker.com/products/docker-desktop/",
+   "bundleId": "com.docker.docker",
+   "teamId": "9BNSXJN65R",
+   "tags": [
+    "popular"
+   ],
+   "license": "freemium",
+   "source": {
+    "kind": "direct",
+    "format": "dmg",
+    "urlArm64": "https://desktop.docker.com/mac/main/arm64/Docker.dmg",
+    "urlX86": "https://desktop.docker.com/mac/main/amd64/Docker.dmg"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "docker-desktop"
+   },
+   "icon": null,
+   "selfUpdates": "its own updater",
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "fork",
+   "name": "Fork",
+   "category": "developer",
+   "vendor": "Fork",
+   "summary": "Fast Git client with an excellent diff viewer.",
+   "homepage": "https://git-fork.com/",
+   "bundleId": "com.DanPristupov.Fork",
+   "teamId": null,
+   "tags": [],
+   "license": "commercial",
+   "source": {
+    "kind": "brew",
+    "cask": "fork"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "github-desktop",
+   "name": "GitHub Desktop",
+   "category": "developer",
+   "vendor": "GitHub",
+   "summary": "Visual Git client.",
+   "homepage": "https://desktop.github.com/",
+   "bundleId": "com.github.GitHubClient",
+   "teamId": null,
+   "tags": [
+    "free"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "direct",
+    "format": "zip",
+    "urlArm64": "https://central.github.com/deployments/desktop/desktop/latest/darwin-arm64",
+    "urlX86": "https://central.github.com/deployments/desktop/desktop/latest/darwin"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "github"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "insomnia",
+   "name": "Insomnia",
+   "category": "developer",
+   "vendor": "Kong",
+   "summary": "Open-source API client.",
+   "homepage": "https://insomnia.rest/",
+   "bundleId": "com.insomnia.app",
+   "teamId": null,
+   "tags": [
+    "open-source"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "cask": "insomnia"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "iterm2",
+   "name": "iTerm2",
+   "category": "developer",
+   "vendor": "George Nachman",
+   "summary": "Terminal replacement with split panes and search.",
+   "homepage": "https://iterm2.com/",
+   "bundleId": "com.googlecode.iterm2",
+   "teamId": "H7V7XYVQ7D",
+   "tags": [
+    "essential",
+    "free"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "direct",
+    "format": "zip",
+    "url": "https://iterm2.com/downloads/stable/latest"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "iterm2"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "jetbrains-toolbox",
+   "name": "JetBrains Toolbox",
+   "category": "developer",
+   "vendor": "JetBrains",
+   "summary": "Installs and updates IntelliJ, PyCharm, WebStorm, Rider and the rest.",
+   "homepage": "https://www.jetbrains.com/toolbox-app/",
+   "bundleId": "com.jetbrains.toolbox",
+   "teamId": null,
+   "tags": [],
+   "license": "freemium",
+   "source": {
+    "kind": "brew",
+    "cask": "jetbrains-toolbox"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "postman",
+   "name": "Postman",
+   "category": "developer",
+   "vendor": "Postman Inc.",
+   "summary": "API development and testing.",
+   "homepage": "https://www.postman.com/",
+   "bundleId": "com.postmanlabs.mac",
+   "teamId": null,
+   "tags": [
+    "popular"
+   ],
+   "license": "freemium",
+   "source": {
+    "kind": "direct",
+    "format": "zip",
+    "urlArm64": "https://dl.pstmn.io/download/latest/osx_arm64",
+    "urlX86": "https://dl.pstmn.io/download/latest/osx_64"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "postman"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "sublime-text",
+   "name": "Sublime Text",
+   "category": "developer",
+   "vendor": "Sublime HQ",
+   "summary": "Fast native text editor.",
+   "homepage": "https://www.sublimetext.com/",
+   "bundleId": "com.sublimetext.4",
+   "teamId": null,
+   "tags": [],
+   "license": "commercial",
+   "source": {
+    "kind": "brew",
+    "cask": "sublime-text"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "tableplus",
+   "name": "TablePlus",
+   "category": "developer",
+   "vendor": "TablePlus",
+   "summary": "Native GUI for Postgres, MySQL, SQLite, Redis and more.",
+   "homepage": "https://tableplus.com/",
+   "bundleId": "com.tinyapp.TablePlus",
+   "teamId": null,
+   "tags": [],
+   "license": "freemium",
+   "source": {
+    "kind": "brew",
+    "cask": "tableplus"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "visual-studio-code",
+   "name": "Visual Studio Code",
+   "category": "developer",
+   "vendor": "Microsoft",
+   "summary": "The default editor for most teams. Universal build.",
+   "homepage": "https://code.visualstudio.com/",
+   "bundleId": "com.microsoft.VSCode",
+   "teamId": "UBF8T346G9",
+   "tags": [
+    "essential",
+    "popular",
+    "free",
+    "microsoft"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "direct",
+    "format": "zip",
+    "url": "https://update.code.visualstudio.com/latest/darwin-universal/stable"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "visual-studio-code"
+   },
+   "icon": null,
+   "selfUpdates": "its own updater",
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "warp",
+   "name": "Warp",
+   "category": "developer",
+   "vendor": "Warp",
+   "summary": "Modern terminal with blocks and AI command search.",
+   "homepage": "https://www.warp.dev/",
+   "bundleId": "dev.warp.Warp-Stable",
+   "teamId": null,
+   "tags": [],
+   "license": "freemium",
+   "source": {
+    "kind": "direct",
+    "format": "dmg",
+    "url": "https://app.warp.dev/download?package=dmg"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "warp"
+   },
+   "icon": null,
+   "selfUpdates": "its own updater",
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "xcodes",
+   "name": "Xcodes",
+   "category": "developer",
+   "vendor": "XcodesOrg",
+   "summary": "Install and switch between multiple Xcode versions.",
+   "homepage": "https://www.xcodes.app/",
+   "bundleId": "com.robotsandpencils.XcodesApp",
+   "teamId": null,
+   "tags": [
+    "open-source"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "github",
+    "repo": "XcodesOrg/XcodesApp",
+    "assetPattern": "^Xcodes\\.zip$",
+    "format": "zip"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "xcodes"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "audacity",
+   "name": "Audacity",
+   "category": "media",
+   "vendor": "Muse Group",
+   "summary": "Multi-track audio editor.",
+   "homepage": "https://www.audacityteam.org/",
+   "bundleId": "org.audacityteam.audacity",
+   "teamId": null,
+   "tags": [
+    "open-source",
+    "free"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "cask": "audacity"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "handbrake",
+   "name": "HandBrake",
+   "category": "media",
+   "vendor": "HandBrake Team",
+   "summary": "Video transcoder.",
+   "homepage": "https://handbrake.fr/",
+   "bundleId": "fr.handbrake.HandBrake",
+   "teamId": null,
+   "tags": [
+    "open-source",
+    "free"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "cask": "handbrake-app"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "iina",
+   "name": "IINA",
+   "category": "media",
+   "vendor": "IINA",
+   "summary": "Modern native media player for macOS.",
+   "homepage": "https://iina.io/",
+   "bundleId": "com.colliderli.iina",
+   "teamId": null,
+   "tags": [
+    "open-source",
+    "free"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "github",
+    "repo": "iina/iina",
+    "assetPattern": "\\.dmg$",
+    "format": "dmg"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "iina"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "loom",
+   "name": "Loom",
+   "category": "media",
+   "vendor": "Atlassian",
+   "summary": "Quick screen and camera recording for async updates.",
+   "homepage": "https://www.loom.com/",
+   "bundleId": "com.loom.desktop",
+   "teamId": null,
+   "tags": [
+    "business"
+   ],
+   "license": "freemium",
+   "source": {
+    "kind": "brew",
+    "cask": "loom"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "obs",
+   "name": "OBS Studio",
+   "category": "media",
+   "vendor": "OBS Project",
+   "summary": "Screen recording and live streaming.",
+   "homepage": "https://obsproject.com/",
+   "bundleId": "com.obsproject.obs-studio",
+   "teamId": null,
+   "tags": [
+    "open-source",
+    "free",
+    "popular"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "cask": "obs"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "plex",
+   "name": "Plex",
+   "category": "media",
+   "vendor": "Plex Inc.",
+   "summary": "Media library client.",
+   "homepage": "https://www.plex.tv/",
+   "bundleId": "tv.plex.desktop",
+   "teamId": null,
+   "tags": [],
+   "license": "freemium",
+   "source": {
+    "kind": "brew",
+    "cask": "plex"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "spotify",
+   "name": "Spotify",
+   "category": "media",
+   "vendor": "Spotify AB",
+   "summary": "Music streaming.",
+   "homepage": "https://www.spotify.com/",
+   "bundleId": "com.spotify.client",
+   "teamId": "2FNC3A47ZF",
+   "tags": [
+    "popular"
+   ],
+   "license": "freemium",
+   "source": {
+    "kind": "direct",
+    "format": "dmg",
+    "urlArm64": "https://download.scdn.co/SpotifyARM64.dmg",
+    "urlX86": "https://download.scdn.co/Spotify.dmg"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "spotify"
+   },
+   "icon": null,
+   "selfUpdates": "its own updater",
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "vlc",
+   "name": "VLC",
+   "category": "media",
+   "vendor": "VideoLAN",
+   "summary": "Plays essentially any media file.",
+   "homepage": "https://www.videolan.org/vlc/",
+   "bundleId": "org.videolan.vlc",
+   "teamId": "75GAHG3SZQ",
+   "tags": [
+    "essential",
+    "open-source",
+    "free",
+    "popular"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "cask": "vlc"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "1password",
+   "name": "1Password",
+   "category": "productivity",
+   "vendor": "AgileBits",
+   "summary": "Password manager with team and business vaults.",
+   "homepage": "https://1password.com/",
+   "bundleId": "com.1password.1password",
+   "teamId": "2BUA8C4S2C",
+   "tags": [
+    "business",
+    "essential",
+    "security"
+   ],
+   "license": "commercial",
+   "source": {
+    "kind": "direct",
+    "format": "zip",
+    "url": "https://downloads.1password.com/mac/1Password.zip"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "1password"
+   },
+   "icon": null,
+   "selfUpdates": "its own updater",
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "alfred",
+   "name": "Alfred",
+   "category": "productivity",
+   "vendor": "Running with Crayons",
+   "summary": "Launcher with workflows and clipboard history.",
+   "homepage": "https://www.alfredapp.com/",
+   "bundleId": "com.runningwithcrayons.Alfred",
+   "teamId": "XZZXE9SED4",
+   "tags": [],
+   "license": "freemium",
+   "source": {
+    "kind": "brew",
+    "cask": "alfred"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "fantastical",
+   "name": "Fantastical",
+   "category": "productivity",
+   "vendor": "Flexibits",
+   "summary": "Calendar with natural-language entry.",
+   "homepage": "https://flexibits.com/fantastical",
+   "bundleId": "com.flexibits.fantastical2.mac",
+   "teamId": "85C27NK92C",
+   "tags": [],
+   "license": "freemium",
+   "source": {
+    "kind": "brew",
+    "cask": "fantastical"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "grammarly",
+   "name": "Grammarly Desktop",
+   "category": "productivity",
+   "vendor": "Grammarly",
+   "summary": "Writing assistance system-wide.",
+   "homepage": "https://www.grammarly.com/desktop",
+   "bundleId": "com.grammarly.ProjectLlama",
+   "teamId": "W8F64X92K3",
+   "tags": [
+    "business"
+   ],
+   "license": "freemium",
+   "source": {
+    "kind": "brew",
+    "cask": "grammarly-desktop"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "microsoft-office",
+   "name": "Microsoft 365 (Office)",
+   "category": "productivity",
+   "vendor": "Microsoft",
+   "summary": "Word, Excel, PowerPoint, Outlook and OneNote suite installer.",
+   "homepage": "https://www.microsoft.com/microsoft-365",
+   "bundleId": null,
+   "teamId": "UBF8T346G9",
+   "tags": [
+    "business",
+    "essential",
+    "microsoft"
+   ],
+   "license": "commercial",
+   "source": {
+    "kind": "direct",
+    "format": "pkg",
+    "url": "https://go.microsoft.com/fwlink/?linkid=525133"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "microsoft-office"
+   },
+   "icon": "https://res-1.cdn.office.net/files/fabric-cdn-prod_20221209.001/assets/brand-icons/product/png/office_48x1.png",
+   "selfUpdates": "Microsoft AutoUpdate",
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "microsoft-excel",
+   "name": "Microsoft Excel",
+   "category": "productivity",
+   "vendor": "Microsoft",
+   "summary": "Excel as a standalone install.",
+   "homepage": "https://www.microsoft.com/microsoft-365/excel",
+   "bundleId": "com.microsoft.Excel",
+   "teamId": "UBF8T346G9",
+   "tags": [
+    "business",
+    "microsoft"
+   ],
+   "license": "commercial",
+   "source": {
+    "kind": "direct",
+    "format": "pkg",
+    "url": "https://go.microsoft.com/fwlink/?linkid=525135"
+   },
+   "icon": "https://res-1.cdn.office.net/files/fabric-cdn-prod_20221209.001/assets/brand-icons/product/png/excel_48x1.png",
+   "selfUpdates": "Microsoft AutoUpdate",
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "microsoft-onenote",
+   "name": "Microsoft OneNote",
+   "category": "productivity",
+   "vendor": "Microsoft",
+   "summary": "OneNote note-taking. Free with a Microsoft account.",
+   "homepage": "https://www.microsoft.com/microsoft-365/onenote",
+   "bundleId": "com.microsoft.onenote.mac",
+   "teamId": "UBF8T346G9",
+   "tags": [
+    "business",
+    "microsoft"
+   ],
+   "license": "freemium",
+   "source": {
+    "kind": "direct",
+    "format": "pkg",
+    "url": "https://go.microsoft.com/fwlink/?linkid=820886"
+   },
+   "icon": "https://res-1.cdn.office.net/files/fabric-cdn-prod_20221209.001/assets/brand-icons/product/png/onenote_48x1.png",
+   "selfUpdates": "Microsoft AutoUpdate",
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "microsoft-outlook",
+   "name": "Microsoft Outlook",
+   "category": "productivity",
+   "vendor": "Microsoft",
+   "summary": "Outlook mail and calendar client.",
+   "homepage": "https://www.microsoft.com/microsoft-365/outlook",
+   "bundleId": "com.microsoft.Outlook",
+   "teamId": "UBF8T346G9",
+   "tags": [
+    "business",
+    "microsoft"
+   ],
+   "license": "commercial",
+   "source": {
+    "kind": "direct",
+    "format": "pkg",
+    "url": "https://go.microsoft.com/fwlink/?linkid=525137"
+   },
+   "icon": "https://res-1.cdn.office.net/files/fabric-cdn-prod_20221209.001/assets/brand-icons/product/png/outlook_48x1.png",
+   "selfUpdates": "Microsoft AutoUpdate",
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "microsoft-powerpoint",
+   "name": "Microsoft PowerPoint",
+   "category": "productivity",
+   "vendor": "Microsoft",
+   "summary": "PowerPoint as a standalone install.",
+   "homepage": "https://www.microsoft.com/microsoft-365/powerpoint",
+   "bundleId": "com.microsoft.Powerpoint",
+   "teamId": "UBF8T346G9",
+   "tags": [
+    "business",
+    "microsoft"
+   ],
+   "license": "commercial",
+   "source": {
+    "kind": "direct",
+    "format": "pkg",
+    "url": "https://go.microsoft.com/fwlink/?linkid=525136"
+   },
+   "icon": "https://res-1.cdn.office.net/files/fabric-cdn-prod_20221209.001/assets/brand-icons/product/png/powerpoint_48x1.png",
+   "selfUpdates": "Microsoft AutoUpdate",
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "microsoft-word",
+   "name": "Microsoft Word",
+   "category": "productivity",
+   "vendor": "Microsoft",
+   "summary": "Word as a standalone install, without the whole suite.",
+   "homepage": "https://www.microsoft.com/microsoft-365/word",
+   "bundleId": "com.microsoft.Word",
+   "teamId": "UBF8T346G9",
+   "tags": [
+    "business",
+    "microsoft"
+   ],
+   "license": "commercial",
+   "source": {
+    "kind": "direct",
+    "format": "pkg",
+    "url": "https://go.microsoft.com/fwlink/?linkid=525134"
+   },
+   "icon": "https://res-1.cdn.office.net/files/fabric-cdn-prod_20221209.001/assets/brand-icons/product/png/word_48x1.png",
+   "selfUpdates": "Microsoft AutoUpdate",
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "notion",
+   "name": "Notion",
+   "category": "productivity",
+   "vendor": "Notion Labs",
+   "summary": "Docs, wikis and databases in one workspace.",
+   "homepage": "https://www.notion.so/desktop",
+   "bundleId": "notion.id",
+   "teamId": null,
+   "tags": [
+    "popular"
+   ],
+   "license": "freemium",
+   "source": {
+    "kind": "direct",
+    "format": "dmg",
+    "url": "https://www.notion.so/desktop/mac/download"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "notion"
+   },
+   "icon": null,
+   "selfUpdates": "its own updater",
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "obsidian",
+   "name": "Obsidian",
+   "category": "productivity",
+   "vendor": "Obsidian",
+   "summary": "Local-first Markdown knowledge base.",
+   "homepage": "https://obsidian.md/",
+   "bundleId": "md.obsidian",
+   "teamId": "6JSW4SJWN9",
+   "tags": [
+    "popular"
+   ],
+   "license": "freemium",
+   "source": {
+    "kind": "github",
+    "repo": "obsidianmd/obsidian-releases",
+    "assetPattern": "^Obsidian-[0-9.]+\\.dmg$",
+    "format": "dmg"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "obsidian"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "raycast",
+   "name": "Raycast",
+   "category": "productivity",
+   "vendor": "Raycast",
+   "summary": "Spotlight replacement with extensions, clipboard history and window management.",
+   "homepage": "https://www.raycast.com/",
+   "bundleId": "com.raycast.macos",
+   "teamId": "SY64MV22J9",
+   "tags": [
+    "essential",
+    "popular"
+   ],
+   "license": "freemium",
+   "source": {
+    "kind": "brew",
+    "cask": "raycast"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "rectangle",
+   "name": "Rectangle",
+   "category": "productivity",
+   "vendor": "Ryan Hanson",
+   "summary": "Keyboard-driven window snapping. Free and open source.",
+   "homepage": "https://rectangleapp.com/",
+   "bundleId": "com.knollsoft.Rectangle",
+   "teamId": "XSYZ3E4B7D",
+   "tags": [
+    "essential",
+    "open-source",
+    "free"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "github",
+    "repo": "rxhanson/Rectangle",
+    "assetPattern": "^Rectangle[0-9.]*\\.dmg$",
+    "format": "dmg"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "rectangle"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "todoist",
+   "name": "Todoist",
+   "category": "productivity",
+   "vendor": "Doist",
+   "summary": "Task management across devices.",
+   "homepage": "https://todoist.com/",
+   "bundleId": "com.todoist.mac.Todoist",
+   "teamId": "S3S2ZE9976",
+   "tags": [],
+   "license": "freemium",
+   "source": {
+    "kind": "brew",
+    "cask": "todoist-app"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "zotero",
+   "name": "Zotero",
+   "category": "productivity",
+   "vendor": "Corporation for Digital Scholarship",
+   "summary": "Reference and citation manager.",
+   "homepage": "https://www.zotero.org/",
+   "bundleId": "org.zotero.zotero",
+   "teamId": "8LAYR367YV",
+   "tags": [
+    "open-source",
+    "free"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "cask": "zotero"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "angry-ip-scanner",
+   "name": "Angry IP Scanner",
+   "category": "remote",
+   "vendor": "angryziber",
+   "summary": "Fast network scanner for auditing a subnet.",
+   "homepage": "https://angryip.org/",
+   "bundleId": "org.angryip.ipscan",
+   "teamId": null,
+   "tags": [
+    "open-source",
+    "business",
+    "free"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "cask": "angry-ip-scanner"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "anydesk",
+   "name": "AnyDesk",
+   "category": "remote",
+   "vendor": "AnyDesk Software",
+   "summary": "Lightweight remote desktop for supporting users.",
+   "homepage": "https://anydesk.com/",
+   "bundleId": "com.philandro.anydesk",
+   "teamId": null,
+   "tags": [
+    "business"
+   ],
+   "license": "freemium",
+   "source": {
+    "kind": "direct",
+    "format": "dmg",
+    "url": "https://download.anydesk.com/anydesk.dmg"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "anydesk"
+   },
+   "icon": null,
+   "selfUpdates": "its own updater",
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "intune-company-portal",
+   "name": "Intune Company Portal",
+   "category": "remote",
+   "vendor": "Microsoft",
+   "summary": "Enrols a Mac into Intune and installs company-assigned apps. The starting point for most managed fleets.",
+   "homepage": "https://learn.microsoft.com/mem/intune/user-help/enroll-your-device-in-intune-macos",
+   "bundleId": "com.microsoft.CompanyPortalMac",
+   "teamId": "UBF8T346G9",
+   "tags": [
+    "business",
+    "microsoft",
+    "essential"
+   ],
+   "license": "freeware",
+   "source": {
+    "kind": "direct",
+    "format": "pkg",
+    "url": "https://go.microsoft.com/fwlink/?linkid=853070"
+   },
+   "icon": "none",
+   "selfUpdates": "Microsoft AutoUpdate",
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "munki",
+   "name": "Munki",
+   "category": "remote",
+   "vendor": "macadmins",
+   "summary": "Open-source managed software deployment for Mac fleets.",
+   "homepage": "https://www.munki.org/",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "business",
+    "open-source",
+    "free"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "github",
+    "repo": "munki/munki",
+    "assetPattern": "^munkitools-[0-9._]+\\.pkg$",
+    "format": "pkg"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "nudge",
+   "name": "Nudge",
+   "category": "remote",
+   "vendor": "macadmins",
+   "summary": "Nags users to install pending macOS updates. A staple of Mac fleet management.",
+   "homepage": "https://github.com/macadmins/nudge",
+   "bundleId": "com.github.macadmins.Nudge",
+   "teamId": "T4SK8ZXCXG",
+   "tags": [
+    "business",
+    "open-source",
+    "free"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "github",
+    "repo": "macadmins/nudge",
+    "assetPattern": "^Nudge-[0-9._]+\\.pkg$",
+    "format": "pkg"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "royal-tsx",
+   "name": "Royal TSX",
+   "category": "remote",
+   "vendor": "Royal Apps",
+   "summary": "Multi-protocol connection manager for admins (RDP, SSH, VNC).",
+   "homepage": "https://www.royalapps.com/ts/mac/features",
+   "bundleId": "com.royalapplications.terminal",
+   "teamId": null,
+   "tags": [
+    "business"
+   ],
+   "license": "freemium",
+   "source": {
+    "kind": "brew",
+    "cask": "royal-tsx"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "rustdesk",
+   "name": "RustDesk",
+   "category": "remote",
+   "vendor": "RustDesk",
+   "summary": "Open-source, self-hostable remote desktop.",
+   "homepage": "https://rustdesk.com/",
+   "bundleId": "com.carriez.RustDesk",
+   "teamId": null,
+   "tags": [
+    "open-source",
+    "business",
+    "free"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "github",
+    "repo": "rustdesk/rustdesk",
+    "assetPattern": "aarch64\\.dmg$",
+    "format": "dmg"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "rustdesk"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "teamviewer",
+   "name": "TeamViewer",
+   "category": "remote",
+   "vendor": "TeamViewer",
+   "summary": "Remote support and unattended access.",
+   "homepage": "https://www.teamviewer.com/",
+   "bundleId": "com.teamviewer.TeamViewer",
+   "teamId": "H7UGFBUGV6",
+   "tags": [
+    "business"
+   ],
+   "license": "freemium",
+   "source": {
+    "kind": "direct",
+    "format": "dmg",
+    "url": "https://download.teamviewer.com/download/TeamViewer.dmg"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "teamviewer"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "microsoft-remote-desktop",
+   "name": "Windows App (Remote Desktop)",
+   "category": "remote",
+   "vendor": "Microsoft",
+   "summary": "RDP client for Windows hosts and Azure Virtual Desktop.",
+   "homepage": "https://apps.microsoft.com/",
+   "bundleId": "com.microsoft.rdc.macos",
+   "teamId": "UBF8T346G9",
+   "tags": [
+    "business",
+    "microsoft"
+   ],
+   "license": "freeware",
+   "source": {
+    "kind": "brew",
+    "cask": "windows-app"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": true,
+   "caskInstaller": null
+  },
+  {
+   "id": "wireshark",
+   "name": "Wireshark",
+   "category": "remote",
+   "vendor": "Wireshark Foundation",
+   "summary": "Network protocol analyser.",
+   "homepage": "https://www.wireshark.org/",
+   "bundleId": "org.wireshark.Wireshark",
+   "teamId": "7Z6EMTD2C6",
+   "tags": [
+    "open-source",
+    "business"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "cask": "wireshark-app"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": true,
+   "caskInstaller": null
+  },
+  {
+   "id": "bitwarden",
+   "name": "Bitwarden",
+   "category": "security",
+   "vendor": "Bitwarden Inc.",
+   "summary": "Open-source password manager with self-hosting option.",
+   "homepage": "https://bitwarden.com/",
+   "bundleId": "com.bitwarden.desktop",
+   "teamId": null,
+   "tags": [
+    "open-source",
+    "business"
+   ],
+   "license": "freemium",
+   "source": {
+    "kind": "direct",
+    "format": "dmg",
+    "url": "https://vault.bitwarden.com/download/?app=desktop&platform=macos"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "bitwarden"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "blockblock",
+   "name": "BlockBlock",
+   "category": "security",
+   "vendor": "Objective-See",
+   "summary": "Alerts when software installs itself persistently.",
+   "homepage": "https://objective-see.org/products/blockblock.html",
+   "bundleId": "com.objective-see.blockblock",
+   "teamId": "VBG97UB4TA",
+   "tags": [
+    "free",
+    "open-source"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "cask": "blockblock"
+   },
+   "icon": "none",
+   "selfUpdates": null,
+   "needsAdmin": true,
+   "caskInstaller": true
+  },
+  {
+   "id": "gpg-suite",
+   "name": "GPG Suite",
+   "category": "security",
+   "vendor": "GPGTools",
+   "summary": "OpenPGP encryption and signing, including Mail integration.",
+   "homepage": "https://gpgtools.org/",
+   "bundleId": "org.gpgtools.gpgkeychain",
+   "teamId": null,
+   "tags": [
+    "open-source"
+   ],
+   "license": "freemium",
+   "source": {
+    "kind": "brew",
+    "cask": "gpg-suite"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": true,
+   "caskInstaller": null
+  },
+  {
+   "id": "knockknock",
+   "name": "KnockKnock",
+   "category": "security",
+   "vendor": "Objective-See",
+   "summary": "Lists persistently installed software so you can spot anything unwanted.",
+   "homepage": "https://objective-see.org/products/knockknock.html",
+   "bundleId": "com.objective-see.knockknock",
+   "teamId": "VBG97UB4TA",
+   "tags": [
+    "free",
+    "open-source",
+    "business"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "cask": "knockknock"
+   },
+   "icon": "none",
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "little-snitch",
+   "name": "Little Snitch",
+   "category": "security",
+   "vendor": "Objective Development",
+   "summary": "Network monitor and application firewall.",
+   "homepage": "https://www.obdev.at/products/littlesnitch/",
+   "bundleId": "at.obdev.littlesnitch",
+   "teamId": "MLZF7K7B5R",
+   "tags": [
+    "business"
+   ],
+   "license": "commercial",
+   "source": {
+    "kind": "brew",
+    "cask": "little-snitch"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "lulu",
+   "name": "LuLu",
+   "category": "security",
+   "vendor": "Objective-See",
+   "summary": "Free outbound firewall that flags unexpected network connections.",
+   "homepage": "https://objective-see.org/products/lulu.html",
+   "bundleId": "com.objective-see.lulu",
+   "teamId": "VBG97UB4TA",
+   "tags": [
+    "free",
+    "open-source",
+    "security"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "github",
+    "repo": "objective-see/LuLu",
+    "assetPattern": "^LuLu_[0-9._]+\\.dmg$",
+    "format": "dmg"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "lulu"
+   },
+   "icon": "none",
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "malwarebytes",
+   "name": "Malwarebytes",
+   "category": "security",
+   "vendor": "Malwarebytes",
+   "summary": "Malware and adware removal.",
+   "homepage": "https://www.malwarebytes.com/mac",
+   "bundleId": "com.malwarebytes.mbam",
+   "teamId": "GVZRY6KDKR",
+   "tags": [
+    "business"
+   ],
+   "license": "freemium",
+   "source": {
+    "kind": "direct",
+    "format": "pkg",
+    "url": "https://downloads.malwarebytes.com/file/mb-mac"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "malwarebytes"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "microsoft-defender",
+   "name": "Microsoft Defender",
+   "category": "security",
+   "vendor": "Microsoft",
+   "summary": "Defender for Endpoint antivirus client. Needs a licence and onboarding package to activate.",
+   "homepage": "https://www.microsoft.com/security/business/endpoint-security/microsoft-defender-endpoint",
+   "bundleId": "com.microsoft.wdav",
+   "teamId": "UBF8T346G9",
+   "tags": [
+    "business",
+    "microsoft"
+   ],
+   "license": "commercial",
+   "source": {
+    "kind": "direct",
+    "format": "pkg",
+    "url": "https://go.microsoft.com/fwlink/?linkid=2097502"
+   },
+   "icon": "none",
+   "selfUpdates": "Microsoft AutoUpdate",
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "veracrypt",
+   "name": "VeraCrypt",
+   "category": "security",
+   "vendor": "IDRIX",
+   "summary": "Disk encryption for containers and volumes.",
+   "homepage": "https://www.veracrypt.fr/",
+   "bundleId": "com.idrix.VeraCrypt",
+   "teamId": null,
+   "tags": [
+    "open-source",
+    "free"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "cask": "veracrypt"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": true,
+   "caskInstaller": null
+  },
+  {
+   "id": "appcleaner",
+   "name": "AppCleaner",
+   "category": "utilities",
+   "vendor": "FreeMacSoft",
+   "summary": "Uninstalls apps along with their leftover support files.",
+   "homepage": "https://freemacsoft.net/appcleaner/",
+   "bundleId": "net.freemacsoft.AppCleaner",
+   "teamId": null,
+   "tags": [
+    "essential",
+    "free"
+   ],
+   "license": "freeware",
+   "source": {
+    "kind": "brew",
+    "cask": "appcleaner"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "balenaetcher",
+   "name": "balenaEtcher",
+   "category": "utilities",
+   "vendor": "Balena",
+   "summary": "Writes bootable USB installers from disk images.",
+   "homepage": "https://etcher.balena.io/",
+   "bundleId": "io.balena.etcher",
+   "teamId": null,
+   "tags": [
+    "business",
+    "open-source"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "cask": "balenaetcher"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "betterdisplay",
+   "name": "BetterDisplay",
+   "category": "utilities",
+   "vendor": "waydabber",
+   "summary": "Fixes scaling and HiDPI on external monitors. Invaluable on multi-monitor setups.",
+   "homepage": "https://github.com/waydabber/BetterDisplay",
+   "bundleId": "pro.betterdisplay.BetterDisplay",
+   "teamId": null,
+   "tags": [
+    "business",
+    "popular"
+   ],
+   "license": "freemium",
+   "source": {
+    "kind": "github",
+    "repo": "waydabber/BetterDisplay",
+    "assetPattern": "^BetterDisplay-v?[0-9._]+\\.dmg$",
+    "format": "dmg"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "betterdisplay"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "grandperspective",
+   "name": "GrandPerspective",
+   "category": "utilities",
+   "vendor": "Erwin Bonsma",
+   "summary": "Visualises what is filling up the disk.",
+   "homepage": "https://grandperspectiv.sourceforge.net/",
+   "bundleId": "net.sourceforge.grandperspectiv",
+   "teamId": null,
+   "tags": [
+    "free",
+    "open-source"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "cask": "grandperspective"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "hiddenbar",
+   "name": "Hidden Bar",
+   "category": "utilities",
+   "vendor": "Dwarves Foundation",
+   "summary": "Hides menu bar icons behind a divider.",
+   "homepage": "https://github.com/dwarvesf/hidden",
+   "bundleId": "com.dwarvesv.minimalbar",
+   "teamId": null,
+   "tags": [
+    "free",
+    "open-source"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "cask": "hiddenbar"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "keepingyouawake",
+   "name": "KeepingYouAwake",
+   "category": "utilities",
+   "vendor": "Marcel Dierkes",
+   "summary": "Menu bar toggle that stops the Mac sleeping.",
+   "homepage": "https://github.com/newmarcel/KeepingYouAwake",
+   "bundleId": "info.marcel-dierkes.KeepingYouAwake",
+   "teamId": null,
+   "tags": [
+    "free",
+    "open-source"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "cask": "keepingyouawake"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "keka",
+   "name": "Keka",
+   "category": "utilities",
+   "vendor": "Aone",
+   "summary": "Archiver that also creates encrypted archives.",
+   "homepage": "https://www.keka.io/",
+   "bundleId": "com.aone.keka",
+   "teamId": null,
+   "tags": [
+    "open-source"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "cask": "keka"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "maccy",
+   "name": "Maccy",
+   "category": "utilities",
+   "vendor": "Alexey Rodionov",
+   "summary": "Lightweight clipboard history.",
+   "homepage": "https://maccy.app/",
+   "bundleId": "org.p0deje.Maccy",
+   "teamId": null,
+   "tags": [
+    "free",
+    "open-source"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "github",
+    "repo": "p0deje/Maccy",
+    "assetPattern": "^Maccy\\.app\\.zip$",
+    "format": "zip"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "maccy"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "microsoft-autoupdate",
+   "name": "Microsoft AutoUpdate",
+   "category": "utilities",
+   "vendor": "Microsoft",
+   "summary": "Keeps every Microsoft app patched. Worth installing on any managed Mac.",
+   "homepage": "https://learn.microsoft.com/officeupdates/release-history-microsoft-autoupdate",
+   "bundleId": "com.microsoft.autoupdate2",
+   "teamId": "UBF8T346G9",
+   "tags": [
+    "business",
+    "microsoft",
+    "essential"
+   ],
+   "license": "freeware",
+   "source": {
+    "kind": "direct",
+    "format": "pkg",
+    "url": "https://go.microsoft.com/fwlink/?linkid=830196"
+   },
+   "icon": "none",
+   "selfUpdates": "Microsoft AutoUpdate",
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "onyx",
+   "name": "OnyX",
+   "category": "utilities",
+   "vendor": "Titanium Software",
+   "summary": "Maintenance, cache clearing and hidden system settings.",
+   "homepage": "https://titanium-software.fr/en/onyx.html",
+   "bundleId": "com.titanium.OnyX",
+   "teamId": null,
+   "tags": [
+    "free",
+    "business"
+   ],
+   "license": "freeware",
+   "source": {
+    "kind": "brew",
+    "cask": "onyx"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "pearcleaner",
+   "name": "Pearcleaner",
+   "category": "utilities",
+   "vendor": "alienator88",
+   "summary": "Open-source app uninstaller and orphaned-file cleaner.",
+   "homepage": "https://github.com/alienator88/Pearcleaner",
+   "bundleId": "com.alienator88.Pearcleaner",
+   "teamId": null,
+   "tags": [
+    "free",
+    "open-source"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "cask": "pearcleaner"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "raspberry-pi-imager",
+   "name": "Raspberry Pi Imager",
+   "category": "utilities",
+   "vendor": "Raspberry Pi Ltd",
+   "summary": "Flashes OS images to SD cards.",
+   "homepage": "https://www.raspberrypi.com/software/",
+   "bundleId": "org.raspberrypi.imagingutility",
+   "teamId": null,
+   "tags": [
+    "free",
+    "open-source"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "cask": "raspberry-pi-imager"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "stats",
+   "name": "Stats",
+   "category": "utilities",
+   "vendor": "Serhiy Mytrovtsiy",
+   "summary": "CPU, memory, network and battery readouts in the menu bar.",
+   "homepage": "https://github.com/exelban/stats",
+   "bundleId": "eu.exelban.Stats",
+   "teamId": null,
+   "tags": [
+    "free",
+    "open-source",
+    "popular"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "github",
+    "repo": "exelban/stats",
+    "assetPattern": "^Stats\\.dmg$",
+    "format": "dmg"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "stats"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "the-unarchiver",
+   "name": "The Unarchiver",
+   "category": "utilities",
+   "vendor": "MacPaw",
+   "summary": "Opens RAR, 7z and dozens of other archive formats.",
+   "homepage": "https://theunarchiver.com/",
+   "bundleId": "cx.c3.theunarchiver",
+   "teamId": null,
+   "tags": [
+    "essential",
+    "free",
+    "popular"
+   ],
+   "license": "freeware",
+   "source": {
+    "kind": "brew",
+    "cask": "the-unarchiver"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "multipass",
+   "name": "Multipass",
+   "category": "virtualization",
+   "vendor": "Canonical",
+   "summary": "Ubuntu VMs on demand from the command line.",
+   "homepage": "https://multipass.run/",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "open-source",
+    "free"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "cask": "multipass"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": true,
+   "caskInstaller": null
+  },
+  {
+   "id": "orbstack",
+   "name": "OrbStack",
+   "category": "virtualization",
+   "vendor": "OrbStack",
+   "summary": "Fast, light Docker and Linux VMs for Apple Silicon.",
+   "homepage": "https://orbstack.dev/",
+   "bundleId": "dev.orbstack.OrbStack",
+   "teamId": null,
+   "tags": [
+    "popular"
+   ],
+   "license": "freemium",
+   "source": {
+    "kind": "brew",
+    "cask": "orbstack"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "parallels",
+   "name": "Parallels Desktop",
+   "category": "virtualization",
+   "vendor": "Parallels",
+   "summary": "Commercial VM host with the best Windows-on-Mac experience.",
+   "homepage": "https://www.parallels.com/",
+   "bundleId": "com.parallels.desktop.console",
+   "teamId": "4C6364ACXT",
+   "tags": [
+    "business"
+   ],
+   "license": "commercial",
+   "source": {
+    "kind": "brew",
+    "cask": "parallels"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "utm",
+   "name": "UTM",
+   "category": "virtualization",
+   "vendor": "Turing Software",
+   "summary": "Free virtual machines on Apple Silicon, built on QEMU.",
+   "homepage": "https://mac.getutm.app/",
+   "bundleId": "com.utmapp.UTM",
+   "teamId": null,
+   "tags": [
+    "free",
+    "open-source"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "github",
+    "repo": "utmapp/UTM",
+    "assetPattern": "^UTM\\.dmg$",
+    "format": "dmg"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "utm"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "virtualbox",
+   "name": "VirtualBox",
+   "category": "virtualization",
+   "vendor": "Oracle",
+   "summary": "Free x86 virtualisation. Note: limited on Apple Silicon.",
+   "homepage": "https://www.virtualbox.org/",
+   "bundleId": "org.virtualbox.app.VirtualBox",
+   "teamId": "VB5E2TV963",
+   "tags": [
+    "free",
+    "open-source"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "cask": "virtualbox"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": true,
+   "caskInstaller": null
+  },
+  {
+   "id": "cloudflare-warp",
+   "name": "Cloudflare WARP",
+   "category": "vpn",
+   "vendor": "Cloudflare",
+   "summary": "1.1.1.1 with WARP. Also the client for Cloudflare Zero Trust deployments.",
+   "homepage": "https://1.1.1.1/",
+   "bundleId": "com.cloudflare.1dot1dot1dot1.macos",
+   "teamId": null,
+   "tags": [
+    "vpn",
+    "business",
+    "free"
+   ],
+   "license": "freemium",
+   "icon": null,
+   "selfUpdates": null,
+   "source": {
+    "kind": "brew",
+    "cask": "cloudflare-warp"
+   },
+   "needsAdmin": true,
+   "caskInstaller": null
+  },
+  {
+   "id": "cyberghost-vpn",
+   "name": "CyberGhost",
+   "category": "vpn",
+   "vendor": "CyberGhost",
+   "summary": "Consumer VPN with streaming-optimised servers.",
+   "homepage": "https://www.cyberghostvpn.com/",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "vpn"
+   ],
+   "license": "commercial",
+   "icon": null,
+   "selfUpdates": null,
+   "source": {
+    "kind": "brew",
+    "cask": "cyberghost-vpn"
+   },
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "expressvpn",
+   "name": "ExpressVPN",
+   "category": "vpn",
+   "vendor": "ExpressVPN",
+   "summary": "Consumer VPN with a large server network.",
+   "homepage": "https://www.expressvpn.com/",
+   "bundleId": "com.expressvpn.ExpressVPN",
+   "teamId": "TC292Y5427",
+   "tags": [
+    "vpn",
+    "popular"
+   ],
+   "license": "commercial",
+   "icon": null,
+   "selfUpdates": null,
+   "source": {
+    "kind": "brew",
+    "cask": "expressvpn"
+   },
+   "needsAdmin": true,
+   "caskInstaller": true
+  },
+  {
+   "id": "ivpn",
+   "name": "IVPN",
+   "category": "vpn",
+   "vendor": "IVPN",
+   "summary": "Privacy-focused VPN with anonymous accounts.",
+   "homepage": "https://www.ivpn.net/",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "vpn",
+    "privacy",
+    "open-source"
+   ],
+   "license": "commercial",
+   "icon": null,
+   "selfUpdates": null,
+   "source": {
+    "kind": "brew",
+    "cask": "ivpn"
+   },
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "mullvad-vpn",
+   "name": "Mullvad",
+   "category": "vpn",
+   "vendor": "Mullvad",
+   "summary": "Account-number-only VPN, no email required. WireGuard native.",
+   "homepage": "https://mullvad.net/",
+   "bundleId": "net.mullvad.vpn",
+   "teamId": null,
+   "tags": [
+    "vpn",
+    "privacy",
+    "open-source"
+   ],
+   "license": "commercial",
+   "icon": null,
+   "selfUpdates": null,
+   "source": {
+    "kind": "brew",
+    "cask": "mullvad-vpn"
+   },
+   "needsAdmin": true,
+   "caskInstaller": null
+  },
+  {
+   "id": "nordvpn",
+   "name": "NordVPN",
+   "category": "vpn",
+   "vendor": "Nord Security",
+   "summary": "Consumer VPN with Threat Protection and Meshnet.",
+   "homepage": "https://nordvpn.com/",
+   "bundleId": "com.nordvpn.macos",
+   "teamId": null,
+   "tags": [
+    "vpn",
+    "popular"
+   ],
+   "license": "commercial",
+   "icon": null,
+   "selfUpdates": null,
+   "source": {
+    "kind": "brew",
+    "cask": "nordvpn"
+   },
+   "needsAdmin": true,
+   "caskInstaller": null
+  },
+  {
+   "id": "openvpn",
+   "name": "OpenVPN",
+   "category": "vpn",
+   "vendor": "OpenVPN",
+   "summary": "The OpenVPN daemon and command line client.",
+   "homepage": "https://openvpn.net/",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "vpn",
+    "open-source",
+    "free"
+   ],
+   "license": "open-source",
+   "icon": "none",
+   "selfUpdates": null,
+   "source": {
+    "kind": "brew",
+    "formula": "openvpn"
+   },
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "openvpn-connect",
+   "name": "OpenVPN Connect",
+   "category": "vpn",
+   "vendor": "OpenVPN",
+   "summary": "Official client for OpenVPN and Access Server profiles.",
+   "homepage": "https://openvpn.net/client/",
+   "bundleId": "org.openvpn.client.app",
+   "teamId": null,
+   "tags": [
+    "vpn",
+    "business",
+    "free"
+   ],
+   "license": "freeware",
+   "icon": null,
+   "selfUpdates": null,
+   "source": {
+    "kind": "brew",
+    "cask": "openvpn-connect"
+   },
+   "needsAdmin": true,
+   "caskInstaller": null
+  },
+  {
+   "id": "private-internet-access",
+   "name": "Private Internet Access",
+   "category": "vpn",
+   "vendor": "PIA",
+   "summary": "Long-standing no-logs VPN.",
+   "homepage": "https://www.privateinternetaccess.com/",
+   "bundleId": "com.privateinternetaccess.vpn",
+   "teamId": null,
+   "tags": [
+    "vpn"
+   ],
+   "license": "commercial",
+   "icon": null,
+   "selfUpdates": null,
+   "source": {
+    "kind": "brew",
+    "cask": "private-internet-access"
+   },
+   "needsAdmin": true,
+   "caskInstaller": true
+  },
+  {
+   "id": "protonvpn",
+   "name": "Proton VPN",
+   "category": "vpn",
+   "vendor": "Proton AG",
+   "summary": "Swiss VPN with an audited no-logs policy and a free tier.",
+   "homepage": "https://protonvpn.com/",
+   "bundleId": "ch.protonvpn.mac",
+   "teamId": null,
+   "tags": [
+    "vpn",
+    "privacy",
+    "popular"
+   ],
+   "license": "freemium",
+   "icon": null,
+   "selfUpdates": null,
+   "source": {
+    "kind": "brew",
+    "cask": "protonvpn"
+   },
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "surfshark",
+   "name": "Surfshark",
+   "category": "vpn",
+   "vendor": "Surfshark",
+   "summary": "VPN with unlimited simultaneous devices.",
+   "homepage": "https://surfshark.com/",
+   "bundleId": "com.surfshark.vpnclient.macos",
+   "teamId": null,
+   "tags": [
+    "vpn"
+   ],
+   "license": "commercial",
+   "icon": null,
+   "selfUpdates": null,
+   "source": {
+    "kind": "brew",
+    "cask": "surfshark"
+   },
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "tailscale",
+   "name": "Tailscale",
+   "category": "vpn",
+   "vendor": "Tailscale Inc.",
+   "summary": "Zero-config WireGuard mesh VPN. Excellent for admin access to remote machines.",
+   "homepage": "https://tailscale.com/",
+   "bundleId": "io.tailscale.ipn.macos",
+   "teamId": "W5364U7YZB",
+   "tags": [
+    "business",
+    "essential",
+    "vpn"
+   ],
+   "license": "freemium",
+   "source": {
+    "kind": "brew",
+    "cask": "tailscale-app"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": true,
+   "caskInstaller": null
+  },
+  {
+   "id": "tunnelblick",
+   "name": "Tunnelblick",
+   "category": "vpn",
+   "vendor": "Tunnelblick",
+   "summary": "Free open-source OpenVPN client, a staple for custom configs.",
+   "homepage": "https://tunnelblick.net/",
+   "bundleId": "net.tunnelblick.tunnelblick",
+   "teamId": null,
+   "tags": [
+    "vpn",
+    "business",
+    "free",
+    "open-source"
+   ],
+   "license": "open-source",
+   "icon": null,
+   "selfUpdates": null,
+   "source": {
+    "kind": "brew",
+    "cask": "tunnelblick"
+   },
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "viscosity",
+   "name": "Viscosity",
+   "category": "vpn",
+   "vendor": "SparkLabs",
+   "summary": "Polished OpenVPN and WireGuard client with detailed connection stats.",
+   "homepage": "https://www.sparklabs.com/viscosity/",
+   "bundleId": "com.viscosityvpn.Viscosity",
+   "teamId": null,
+   "tags": [
+    "vpn",
+    "business"
+   ],
+   "license": "commercial",
+   "icon": null,
+   "selfUpdates": null,
+   "source": {
+    "kind": "brew",
+    "cask": "viscosity"
+   },
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "windscribe",
+   "name": "Windscribe",
+   "category": "vpn",
+   "vendor": "Windscribe",
+   "summary": "VPN with a usable free tier and a firewall.",
+   "homepage": "https://windscribe.com/",
+   "bundleId": "com.windscribe.desktop",
+   "teamId": null,
+   "tags": [
+    "vpn"
+   ],
+   "license": "freemium",
+   "icon": null,
+   "selfUpdates": null,
+   "source": {
+    "kind": "brew",
+    "cask": "windscribe"
+   },
+   "needsAdmin": true,
+   "caskInstaller": true
+  },
+  {
+   "id": "wireguard-tools",
+   "name": "WireGuard Tools",
+   "category": "vpn",
+   "vendor": "WireGuard",
+   "summary": "wg and wg-quick command line tools.",
+   "homepage": "https://www.wireguard.com/",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "vpn",
+    "open-source",
+    "free"
+   ],
+   "license": "open-source",
+   "icon": null,
+   "selfUpdates": null,
+   "source": {
+    "kind": "brew",
+    "formula": "wireguard-tools"
+   },
+   "needsAdmin": null,
+   "caskInstaller": null
+  }
+ ],
+ "systemDefaults": [
+  {
+   "id": "finder-show-extensions",
+   "group": "Finder",
+   "name": "Show all file extensions",
+   "detail": "Stops macOS hiding .app, .pdf and friends.",
+   "command": "defaults write NSGlobalDomain AppleShowAllExtensions -bool true",
+   "revert": "defaults write NSGlobalDomain AppleShowAllExtensions -bool false",
+   "restart": [
+    "Finder"
+   ],
+   "recommended": true
+  },
+  {
+   "id": "finder-show-hidden",
+   "group": "Finder",
+   "name": "Show hidden files",
+   "detail": "Dotfiles visible in Finder without pressing Cmd-Shift-period.",
+   "command": "defaults write com.apple.finder AppleShowAllFiles -bool true",
+   "revert": "defaults write com.apple.finder AppleShowAllFiles -bool false",
+   "restart": [
+    "Finder"
+   ],
+   "recommended": false
+  },
+  {
+   "id": "finder-path-bar",
+   "group": "Finder",
+   "name": "Show path bar and status bar",
+   "detail": "Adds the full path and item count at the bottom of every window.",
+   "command": "defaults write com.apple.finder ShowPathbar -bool true; defaults write com.apple.finder ShowStatusBar -bool true",
+   "revert": "defaults write com.apple.finder ShowPathbar -bool false; defaults write com.apple.finder ShowStatusBar -bool false",
+   "restart": [
+    "Finder"
+   ],
+   "recommended": true
+  },
+  {
+   "id": "finder-list-view",
+   "group": "Finder",
+   "name": "Default to list view",
+   "detail": "Opens new windows in list view rather than icon view.",
+   "command": "defaults write com.apple.finder FXPreferredViewStyle -string Nlsv",
+   "revert": "defaults write com.apple.finder FXPreferredViewStyle -string icnv",
+   "restart": [
+    "Finder"
+   ],
+   "recommended": true
+  },
+  {
+   "id": "finder-keep-folders-top",
+   "group": "Finder",
+   "name": "Keep folders on top when sorting",
+   "detail": "Folders sort above loose files, Windows-style.",
+   "command": "defaults write com.apple.finder _FXSortFoldersFirst -bool true",
+   "revert": "defaults write com.apple.finder _FXSortFoldersFirst -bool false",
+   "restart": [
+    "Finder"
+   ],
+   "recommended": true
+  },
+  {
+   "id": "finder-no-dsstore-network",
+   "group": "Finder",
+   "name": "Don't write .DS_Store on network or USB volumes",
+   "detail": "Stops littering shared drives. Worth setting on every business machine.",
+   "command": "defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true; defaults write com.apple.desktopservices DSDontWriteUSBStores -bool true",
+   "revert": "defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool false; defaults write com.apple.desktopservices DSDontWriteUSBStores -bool false",
+   "restart": [
+    "Finder"
+   ],
+   "recommended": true
+  },
+  {
+   "id": "dock-autohide-fast",
+   "group": "Dock",
+   "name": "Fast Dock auto-hide",
+   "detail": "Removes the show/hide animation delay.",
+   "command": "defaults write com.apple.dock autohide -bool true; defaults write com.apple.dock autohide-delay -float 0; defaults write com.apple.dock autohide-time-modifier -float 0.15",
+   "revert": "defaults delete com.apple.dock autohide-delay; defaults delete com.apple.dock autohide-time-modifier",
+   "restart": [
+    "Dock"
+   ],
+   "recommended": false
+  },
+  {
+   "id": "dock-no-recents",
+   "group": "Dock",
+   "name": "Hide recent applications in Dock",
+   "detail": "Removes the trailing recents section.",
+   "command": "defaults write com.apple.dock show-recents -bool false",
+   "revert": "defaults write com.apple.dock show-recents -bool true",
+   "restart": [
+    "Dock"
+   ],
+   "recommended": true
+  },
+  {
+   "id": "dock-minimize-to-icon",
+   "group": "Dock",
+   "name": "Minimise windows into the app icon",
+   "detail": "Keeps the Dock from filling up with minimised windows.",
+   "command": "defaults write com.apple.dock minimize-to-application -bool true",
+   "revert": "defaults write com.apple.dock minimize-to-application -bool false",
+   "restart": [
+    "Dock"
+   ],
+   "recommended": true
+  },
+  {
+   "id": "keyboard-fast-repeat",
+   "group": "Keyboard & Trackpad",
+   "name": "Fast key repeat",
+   "detail": "Sets repeat rate and delay to the quickest values the UI allows.",
+   "command": "defaults write NSGlobalDomain KeyRepeat -int 2; defaults write NSGlobalDomain InitialKeyRepeat -int 15",
+   "revert": "defaults delete NSGlobalDomain KeyRepeat; defaults delete NSGlobalDomain InitialKeyRepeat",
+   "restart": [],
+   "recommended": true
+  },
+  {
+   "id": "keyboard-no-press-hold",
+   "group": "Keyboard & Trackpad",
+   "name": "Disable press-and-hold accent picker",
+   "detail": "Holding a key repeats it instead of offering accented characters. Useful for developers.",
+   "command": "defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false",
+   "revert": "defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool true",
+   "restart": [],
+   "recommended": false
+  },
+  {
+   "id": "trackpad-tap-to-click",
+   "group": "Keyboard & Trackpad",
+   "name": "Tap to click",
+   "detail": "Enables tapping on the trackpad and at the login window.",
+   "command": "defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad Clicking -bool true; defaults -currentHost write NSGlobalDomain com.apple.mouse.tapBehavior -int 1",
+   "revert": "defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad Clicking -bool false; defaults -currentHost write NSGlobalDomain com.apple.mouse.tapBehavior -int 0",
+   "restart": [],
+   "recommended": true
+  },
+  {
+   "id": "text-no-autocorrect",
+   "group": "Text",
+   "name": "Disable autocorrect and smart quotes",
+   "detail": "Stops macOS rewriting quotes and dashes in code and terminal input.",
+   "command": "defaults write NSGlobalDomain NSAutomaticSpellingCorrectionEnabled -bool false; defaults write NSGlobalDomain NSAutomaticQuoteSubstitutionEnabled -bool false; defaults write NSGlobalDomain NSAutomaticDashSubstitutionEnabled -bool false",
+   "revert": "defaults write NSGlobalDomain NSAutomaticSpellingCorrectionEnabled -bool true; defaults write NSGlobalDomain NSAutomaticQuoteSubstitutionEnabled -bool true; defaults write NSGlobalDomain NSAutomaticDashSubstitutionEnabled -bool true",
+   "restart": [],
+   "recommended": true
+  },
+  {
+   "id": "screenshots-folder",
+   "group": "Screenshots",
+   "name": "Save screenshots to ~/Screenshots",
+   "detail": "Creates the folder and points screen capture at it instead of the Desktop.",
+   "command": "mkdir -p \"$USER_HOME/Screenshots\"; defaults write com.apple.screencapture location \"$USER_HOME/Screenshots\"",
+   "revert": "defaults write com.apple.screencapture location \"$USER_HOME/Desktop\"",
+   "restart": [
+    "SystemUIServer"
+   ],
+   "recommended": true
+  },
+  {
+   "id": "screenshots-no-shadow",
+   "group": "Screenshots",
+   "name": "No drop shadow on window screenshots",
+   "detail": "Removes the large transparent border around captured windows.",
+   "command": "defaults write com.apple.screencapture disable-shadow -bool true",
+   "revert": "defaults write com.apple.screencapture disable-shadow -bool false",
+   "restart": [
+    "SystemUIServer"
+   ],
+   "recommended": false
+  },
+  {
+   "id": "save-panel-expanded",
+   "group": "Dialogs",
+   "name": "Expand save and print dialogs by default",
+   "detail": "Always shows the full file browser rather than the compact sheet.",
+   "command": "defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode -bool true; defaults write NSGlobalDomain PMPrintingExpandedStateForPrint -bool true",
+   "revert": "defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode -bool false; defaults write NSGlobalDomain PMPrintingExpandedStateForPrint -bool false",
+   "restart": [],
+   "recommended": true
+  },
+  {
+   "id": "save-to-disk-default",
+   "group": "Dialogs",
+   "name": "Save to disk, not iCloud, by default",
+   "detail": "New documents default to a local folder.",
+   "command": "defaults write NSGlobalDomain NSDocumentSaveNewDocumentsToCloud -bool false",
+   "revert": "defaults write NSGlobalDomain NSDocumentSaveNewDocumentsToCloud -bool true",
+   "restart": [],
+   "recommended": true
+  },
+  {
+   "id": "disable-quarantine-prompt",
+   "group": "Dialogs",
+   "name": "Don't ask before opening each downloaded app",
+   "detail": "Suppresses the repeated 'are you sure you want to open this' prompt. Leave off on shared machines.",
+   "command": "defaults write com.apple.LaunchServices LSQuarantine -bool false",
+   "revert": "defaults write com.apple.LaunchServices LSQuarantine -bool true",
+   "restart": [],
+   "recommended": false
+  }
+ ],
+ "webApps": [
+  {
+   "id": "gmail",
+   "name": "Gmail",
+   "group": "Google Workspace",
+   "url": "https://mail.google.com/",
+   "summary": "Gmail in its own window, out of your browser tabs.",
+   "icon": "https://www.gstatic.com/images/branding/product/2x/gmail_2020q4_48dp.png"
+  },
+  {
+   "id": "google-calendar",
+   "name": "Google Calendar",
+   "group": "Google Workspace",
+   "url": "https://calendar.google.com/",
+   "summary": "Calendar as a standalone app.",
+   "icon": "https://www.gstatic.com/images/branding/product/2x/calendar_2020q4_48dp.png"
+  },
+  {
+   "id": "google-drive-web",
+   "name": "Google Drive",
+   "group": "Google Workspace",
+   "url": "https://drive.google.com/",
+   "summary": "Drive file browser.",
+   "icon": "https://www.gstatic.com/images/branding/product/2x/drive_2020q4_48dp.png"
+  },
+  {
+   "id": "google-docs",
+   "name": "Google Docs",
+   "group": "Google Workspace",
+   "url": "https://docs.google.com/document/",
+   "summary": "Documents.",
+   "icon": "https://www.gstatic.com/images/branding/product/2x/docs_2020q4_48dp.png"
+  },
+  {
+   "id": "google-sheets",
+   "name": "Google Sheets",
+   "group": "Google Workspace",
+   "url": "https://docs.google.com/spreadsheets/",
+   "summary": "Spreadsheets.",
+   "icon": "https://www.gstatic.com/images/branding/product/2x/sheets_2020q4_48dp.png"
+  },
+  {
+   "id": "google-slides",
+   "name": "Google Slides",
+   "group": "Google Workspace",
+   "url": "https://docs.google.com/presentation/",
+   "summary": "Presentations.",
+   "icon": "https://www.gstatic.com/images/branding/product/2x/slides_2020q4_48dp.png"
+  },
+  {
+   "id": "google-meet",
+   "name": "Google Meet",
+   "group": "Google Workspace",
+   "url": "https://meet.google.com/",
+   "summary": "Video calls in a dedicated window, which keeps screen sharing tidy.",
+   "icon": null
+  },
+  {
+   "id": "google-chat",
+   "name": "Google Chat",
+   "group": "Google Workspace",
+   "url": "https://chat.google.com/",
+   "summary": "Team chat.",
+   "icon": "https://www.gstatic.com/images/branding/product/2x/chat_2020q4_48dp.png"
+  },
+  {
+   "id": "google-keep",
+   "name": "Google Keep",
+   "group": "Google Workspace",
+   "url": "https://keep.google.com/",
+   "summary": "Quick notes.",
+   "icon": "https://www.gstatic.com/images/branding/product/1x/keep_2020q4_48dp.png"
+  },
+  {
+   "id": "google-contacts",
+   "name": "Google Contacts",
+   "group": "Google Workspace",
+   "url": "https://contacts.google.com/",
+   "summary": "Contact management.",
+   "icon": "https://www.gstatic.com/images/branding/product/2x/contacts_48dp.png"
+  },
+  {
+   "id": "google-photos",
+   "name": "Google Photos",
+   "group": "Google Workspace",
+   "url": "https://photos.google.com/",
+   "summary": "Photo library.",
+   "icon": null
+  },
+  {
+   "id": "google-admin",
+   "name": "Google Admin",
+   "group": "Google Workspace",
+   "url": "https://admin.google.com/",
+   "summary": "Workspace admin console. Handy to keep separate from a personal profile.",
+   "icon": "https://www.gstatic.com/images/branding/product/2x/admin_2020q4_48dp.png"
+  },
+  {
+   "id": "gemini-web",
+   "name": "Gemini",
+   "group": "Google Workspace",
+   "url": "https://gemini.google.com/",
+   "summary": "Google's assistant.",
+   "icon": "https://www.gstatic.com/images/branding/product/2x/gemini_48dp.png"
+  },
+  {
+   "id": "youtube",
+   "name": "YouTube",
+   "group": "Google Workspace",
+   "url": "https://www.youtube.com/",
+   "summary": "YouTube.",
+   "icon": null
+  },
+  {
+   "id": "outlook-web",
+   "name": "Outlook Web",
+   "group": "Microsoft 365",
+   "url": "https://outlook.office.com/mail/",
+   "summary": "Outlook on the web.",
+   "icon": "https://res-1.cdn.office.net/files/fabric-cdn-prod_20221209.001/assets/brand-icons/product/png/outlook_48x1.png"
+  },
+  {
+   "id": "teams-web",
+   "name": "Teams Web",
+   "group": "Microsoft 365",
+   "url": "https://teams.microsoft.com/",
+   "summary": "Teams without the desktop client.",
+   "icon": "https://res-1.cdn.office.net/files/fabric-cdn-prod_20221209.001/assets/brand-icons/product/png/teams_48x1.png"
+  },
+  {
+   "id": "onedrive-web",
+   "name": "OneDrive Web",
+   "group": "Microsoft 365",
+   "url": "https://onedrive.live.com/",
+   "summary": "OneDrive in the browser.",
+   "icon": "https://res-1.cdn.office.net/files/fabric-cdn-prod_20221209.001/assets/brand-icons/product/png/onedrive_48x1.png"
+  },
+  {
+   "id": "m365-admin",
+   "name": "Microsoft 365 Admin",
+   "group": "Microsoft 365",
+   "url": "https://admin.microsoft.com/",
+   "summary": "Tenant administration.",
+   "icon": "none"
+  },
+  {
+   "id": "azure-portal",
+   "name": "Azure Portal",
+   "group": "Microsoft 365",
+   "url": "https://portal.azure.com/",
+   "summary": "Azure resource management.",
+   "icon": "https://github.com/Azure.png?size=128"
+  },
+  {
+   "id": "entra-admin",
+   "name": "Microsoft Entra Admin",
+   "group": "Microsoft 365",
+   "url": "https://entra.microsoft.com/",
+   "summary": "Identity and access administration.",
+   "icon": "none"
+  },
+  {
+   "id": "intune-admin",
+   "name": "Intune Admin Center",
+   "group": "Microsoft 365",
+   "url": "https://intune.microsoft.com/",
+   "summary": "Device management console.",
+   "icon": "none"
+  },
+  {
+   "id": "notion-web",
+   "name": "Notion",
+   "group": "Work & Projects",
+   "url": "https://www.notion.so/",
+   "summary": "Notion in the browser.",
+   "icon": "https://www.notion.so/images/favicon.ico"
+  },
+  {
+   "id": "trello",
+   "name": "Trello",
+   "group": "Work & Projects",
+   "url": "https://trello.com/",
+   "summary": "Kanban boards.",
+   "icon": null
+  },
+  {
+   "id": "asana",
+   "name": "Asana",
+   "group": "Work & Projects",
+   "url": "https://app.asana.com/",
+   "summary": "Project tracking.",
+   "icon": "https://asana.com/favicon.ico"
+  },
+  {
+   "id": "linear",
+   "name": "Linear",
+   "group": "Work & Projects",
+   "url": "https://linear.app/",
+   "summary": "Issue tracking.",
+   "icon": null
+  },
+  {
+   "id": "jira",
+   "name": "Jira",
+   "group": "Work & Projects",
+   "url": "https://www.atlassian.com/software/jira",
+   "summary": "Atlassian issue tracking.",
+   "icon": null
+  },
+  {
+   "id": "monday",
+   "name": "monday.com",
+   "group": "Work & Projects",
+   "url": "https://monday.com/",
+   "summary": "Work management.",
+   "icon": null
+  },
+  {
+   "id": "airtable",
+   "name": "Airtable",
+   "group": "Work & Projects",
+   "url": "https://airtable.com/",
+   "summary": "Database-backed spreadsheets.",
+   "icon": null
+  },
+  {
+   "id": "miro",
+   "name": "Miro",
+   "group": "Work & Projects",
+   "url": "https://miro.com/",
+   "summary": "Collaborative whiteboard.",
+   "icon": null
+  },
+  {
+   "id": "figma-web",
+   "name": "Figma",
+   "group": "Work & Projects",
+   "url": "https://www.figma.com/",
+   "summary": "Figma in the browser.",
+   "icon": "https://static.figma.com/app/icon/1/favicon.png"
+  },
+  {
+   "id": "canva",
+   "name": "Canva",
+   "group": "Work & Projects",
+   "url": "https://www.canva.com/",
+   "summary": "Graphic design.",
+   "icon": null
+  },
+  {
+   "id": "slack-web",
+   "name": "Slack Web",
+   "group": "Work & Projects",
+   "url": "https://app.slack.com/client",
+   "summary": "Slack without the desktop client.",
+   "icon": null
+  },
+  {
+   "id": "chatgpt-web",
+   "name": "ChatGPT",
+   "group": "AI",
+   "url": "https://chatgpt.com/",
+   "summary": "ChatGPT in its own window.",
+   "icon": "https://cdn.oaistatic.com/assets/favicon-180x180-od45eci6.webp"
+  },
+  {
+   "id": "claude-web",
+   "name": "Claude",
+   "group": "AI",
+   "url": "https://claude.ai/",
+   "summary": "Claude in its own window.",
+   "icon": null
+  },
+  {
+   "id": "perplexity-web",
+   "name": "Perplexity",
+   "group": "AI",
+   "url": "https://www.perplexity.ai/",
+   "summary": "Perplexity answers.",
+   "icon": null
+  },
+  {
+   "id": "copilot-web",
+   "name": "Microsoft Copilot",
+   "group": "AI",
+   "url": "https://copilot.microsoft.com/",
+   "summary": "Microsoft's assistant.",
+   "icon": null
+  },
+  {
+   "id": "github-web",
+   "name": "GitHub",
+   "group": "Developer",
+   "url": "https://github.com/",
+   "summary": "Repositories, issues and pull requests.",
+   "icon": null
+  },
+  {
+   "id": "gitlab-web",
+   "name": "GitLab",
+   "group": "Developer",
+   "url": "https://gitlab.com/",
+   "summary": "GitLab.",
+   "icon": null
+  },
+  {
+   "id": "vercel",
+   "name": "Vercel",
+   "group": "Developer",
+   "url": "https://vercel.com/dashboard",
+   "summary": "Deployment dashboard.",
+   "icon": null
+  },
+  {
+   "id": "cloudflare",
+   "name": "Cloudflare",
+   "group": "Developer",
+   "url": "https://dash.cloudflare.com/",
+   "summary": "DNS, CDN and Zero Trust dashboard.",
+   "icon": null
+  },
+  {
+   "id": "aws-console",
+   "name": "AWS Console",
+   "group": "Developer",
+   "url": "https://console.aws.amazon.com/",
+   "summary": "AWS management console.",
+   "icon": null
+  },
+  {
+   "id": "spotify-web",
+   "name": "Spotify Web",
+   "group": "Media",
+   "url": "https://open.spotify.com/",
+   "summary": "Spotify without the desktop client.",
+   "icon": null
+  },
+  {
+   "id": "youtube-music",
+   "name": "YouTube Music",
+   "group": "Media",
+   "url": "https://music.youtube.com/",
+   "summary": "Music streaming.",
+   "icon": null
+  },
+  {
+   "id": "netflix",
+   "name": "Netflix",
+   "group": "Media",
+   "url": "https://www.netflix.com/",
+   "summary": "Netflix.",
+   "icon": null
+  }
+ ]
+}

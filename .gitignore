@@ -1,0 +1,19 @@
+# Swift Package Manager build products (1.5 GB — never commit these)
+.build/
+.swiftpm/
+*.o
+*.dSYM/
+
+# The assembled app and its share bundle. Rebuild with ./Scripts/build-app.sh,
+# or attach them to a GitHub Release rather than tracking binaries here.
+build/
+
+# macOS
+.DS_Store
+
+# Stale duplicate left in the repo root by a parallel session; the real one is
+# Scripts/selftest.sh
+/selftest.sh
+
+# Local scratch
+*.log
