@@ -286,6 +286,31 @@ enum Entry {
             exit(0)
         }
 
+        if let i = args.firstIndex(of: "--login-item") {
+            // Scriptable so a fleet can be set up without clicking through the
+            // interface. Must run from inside the .app: SMAppService registers
+            // the bundle it is called from.
+            let want = (i + 1 < args.count) ? args[i + 1] : "status"
+            final class Flag { var done = false }
+            let flag = Flag()
+            Task { @MainActor in
+                switch want {
+                case "on", "off":
+                    if let err = LoginItem.set(want == "on") {
+                        print("could not change it: \(err)")
+                    }
+                    print("login item: \(LoginItem.statusText)")
+                default:
+                    print("login item: \(LoginItem.statusText)")
+                }
+                flag.done = true
+            }
+            while !flag.done {
+                _ = RunLoop.main.run(mode: .default, before: Date().addingTimeInterval(0.05))
+            }
+            exit(0)
+        }
+
         if args.contains("--cache-os-installer") {
             // Downloads the macOS installer ahead of time. This is a large,
             // slow download, so it reports what it is about to do, refuses

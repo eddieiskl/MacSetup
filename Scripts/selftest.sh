@@ -652,6 +652,17 @@ else
   bad "running outside an app bundle does not crash" "$(tail -3 /tmp/st-bundle.txt)"
 fi
 
+# Reporting login-item status must never change it: a status query that
+# silently registered the app would be a nasty surprise on a colleague's Mac.
+BEFORE_LI="$($BIN --login-item 2>&1)"
+AFTER_LI="$($BIN --login-item 2>&1)"
+if [ -n "$BEFORE_LI" ] && [ "$BEFORE_LI" = "$AFTER_LI" ] && \
+   echo "$BEFORE_LI" | grep -q 'login item:'; then
+  ok "login-item status is read-only"
+else
+  bad "login-item status is read-only" "$BEFORE_LI / $AFTER_LI"
+fi
+
 # The installer cache must never start a huge download implicitly.
 if $BIN --cache-os-installer --dry-run >/tmp/st-cache.txt 2>&1 \
    && grep -qE 'would run: /usr/sbin/softwareupdate --fetch-full-installer' /tmp/st-cache.txt \

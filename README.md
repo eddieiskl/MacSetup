@@ -444,7 +444,13 @@ To see it without turning it on:
 ```
 
 Needs **Start MacSetup at login** for the "after a restart" case, otherwise the
-app is not running to show anything.
+app is not running to show anything. That can be set from the command
+line for a fleet:
+
+```bash
+/Applications/MacSetup.app/Contents/MacOS/MacSetup --login-item on
+/Applications/MacSetup.app/Contents/MacOS/MacSetup --login-item      # status only
+```
 
 ### Downloading macOS ahead of time
 
