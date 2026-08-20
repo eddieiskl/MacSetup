@@ -342,19 +342,49 @@ enum Entry {
                     print("would run: \(cmd.joined(separator: " "))")
                     flag.done = true; return
                 }
-                print("running: \(cmd.joined(separator: " "))")
-                let p = Process()
-                p.executableURL = URL(fileURLWithPath: cmd[0])
-                p.arguments = Array(cmd.dropFirst())
-                do { try p.run() } catch {
-                    print("could not start softwareupdate: \(error.localizedDescription)")
-                    flag.done = true; return
-                }
-                p.waitUntilExit()
-                if let got = OSInstallerCache.cached(matching: release) {
-                    print("cached: \(got.url.path) (\(got.sizeText))")
-                } else {
-                    print("softwareupdate exited \(p.terminationStatus) with no installer in /Applications")
+                // A drop partway through 18 GB is ordinary, so one attempt is
+                // the wrong design. Retries only for reasons a retry can fix.
+                let maxAttempts = 4
+                for attempt in 1...maxAttempts {
+                    print("running (attempt \(attempt)/\(maxAttempts)): \(cmd.joined(separator: " "))")
+                    let p = Process()
+                    p.executableURL = URL(fileURLWithPath: cmd[0])
+                    p.arguments = Array(cmd.dropFirst())
+                    let pipe = Pipe()
+                    p.standardOutput = pipe
+                    p.standardError = pipe
+                    // The handler runs on its own queue, so the buffer it
+                    // appends to has to be safe to touch from there.
+                    let sink = OutputSink()
+                    pipe.fileHandleForReading.readabilityHandler = { h in
+                        let d = h.availableData
+                        guard !d.isEmpty else { return }
+                        sink.append(d)
+                        FileHandle.standardOutput.write(d)
+                    }
+                    do { try p.run() } catch {
+                        print("could not start softwareupdate: \(error.localizedDescription)")
+                        break
+                    }
+                    p.waitUntilExit()
+                    pipe.fileHandleForReading.readabilityHandler = nil
+                    let captured = sink.text
+
+                    if let got = OSInstallerCache.cached(matching: release) {
+                        print("\ncached: \(got.url.path) (\(got.sizeText))")
+                        break
+                    }
+                    print("\nattempt \(attempt) finished with no installer (exit \(p.terminationStatus))")
+                    guard attempt < maxAttempts,
+                          OSInstallerCache.isRetryable(log: captured) else {
+                        if !OSInstallerCache.isRetryable(log: captured) {
+                            print("not a retryable failure — leaving it alone")
+                        }
+                        break
+                    }
+                    let wait = OSInstallerCache.backoffSeconds(attempt: attempt)
+                    print("retrying in \(wait)s…")
+                    try? await Task.sleep(nanoseconds: UInt64(wait) * 1_000_000_000)
                 }
                 flag.done = true
             }
@@ -436,6 +466,29 @@ enum Entry {
                   OSInstallerCache.cached().isEmpty
                   ? OSInstallerCache.cached(matching: tahoe) == nil
                   : true)
+
+            // The real failure from this machine's first attempt: 41% in, the
+            // wifi dropped. That must be retried, or an overnight cache job
+            // gives up on the most ordinary failure there is.
+            let realFailure = """
+            Scanning for 26.7 installer
+            Installing: 41.0%Install failed with error: Installation failed
+            Error Domain=PKDownloadError Code=8 UserInfo={NSUnderlyingError=\
+            Error Domain=NSURLErrorDomain Code=-1009 "The Internet connection appears to be offline."
+            """
+            check("a mid-download network drop is retried",
+                  OSInstallerCache.isRetryable(log: realFailure))
+            check("running out of disk is not retried",
+                  !OSInstallerCache.isRetryable(log: "Error: not enough free space to continue"))
+            check("an unavailable version is not retried",
+                  !OSInstallerCache.isRetryable(log: "Could not find installer for version 99.9"))
+            check("a clean run is not retried",
+                  !OSInstallerCache.isRetryable(log: "Install finished successfully"))
+            check("backoff grows and then caps",
+                  OSInstallerCache.backoffSeconds(attempt: 1) == 30
+                  && OSInstallerCache.backoffSeconds(attempt: 2) == 60
+                  && OSInstallerCache.backoffSeconds(attempt: 3) == 120
+                  && OSInstallerCache.backoffSeconds(attempt: 99) == 300)
 
             print("\n\(failed == 0 ? "all nag cases passed" : "\(failed) nag cases failed")")
             exit(failed == 0 ? 0 : 1)

@@ -464,6 +464,12 @@ which demands a volume owner's password even to stage a release.
 /Applications/MacSetup.app/Contents/MacOS/MacSetup --cache-os-installer
 ```
 
+An 18 GB download over wifi will sometimes fail partway — that is ordinary, not
+exceptional — so it retries up to four times with a growing backoff. It retries
+only reasons a retry can fix: a dropped connection yes, out of disk or a version
+Apple does not offer no, since retrying those wastes bandwidth and hides the
+real reason.
+
 It refuses if the disk lacks the download plus 15 GB of headroom — an installer
 that half-downloads overnight and leaves no room to log in is worse than none.
 Once cached, the update screen says *Already downloaded* and its button starts

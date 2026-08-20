@@ -86,8 +86,56 @@ enum OSInstallerCache {
         ["--fetch-full-installer", "--full-installer-version", version]
     }
 
+    /// Whether a failed run is worth trying again.
+    ///
+    /// An 18 GB download over a laptop's wifi will sometimes fail partway —
+    /// that is ordinary, not exceptional, so a single attempt is the wrong
+    /// design. A network drop is worth retrying; being out of disk or handed a
+    /// version Apple does not offer is not, and retrying those just wastes
+    /// bandwidth and hides the real reason.
+    static func isRetryable(log: String) -> Bool {
+        let l = log.lowercased()
+        let permanent = ["not enough", "no space", "could not find",
+                         "not eligible", "unauthorized", "no such version"]
+        if permanent.contains(where: l.contains) { return false }
+        let transient = ["offline", "timed out", "timeout", "network",
+                         "connection", "-1009", "-1005", "-1001",
+                         "pkdownloaderror", "installation failed"]
+        return transient.contains(where: l.contains)
+    }
+
+    /// Seconds to wait before attempt `n` (1-based), backing off but capped so
+    /// an overnight job still gets several tries in.
+    static func backoffSeconds(attempt: Int) -> Int {
+        // The shift is clamped, not just the result: `1 << 98` overflows Int
+        // and wraps to zero, which would turn a backoff into a tight retry
+        // loop rather than a long wait.
+        let steps = min(max(0, attempt - 1), 16)
+        return min(300, 30 * (1 << steps))
+    }
+
     @discardableResult
     static func open(_ cached: Cached) -> Bool {
         NSWorkspace.shared.open(cached.url)
+    }
+}
+
+/// A thread-safe buffer for a subprocess's output.
+///
+/// `readabilityHandler` is called on a private queue, so appending to a plain
+/// captured `var` from it is a data race — one the compiler now rejects
+/// outright in Swift 6 mode.
+final class OutputSink: @unchecked Sendable {
+    private let lock = NSLock()
+    private var buffer = Data()
+
+    func append(_ d: Data) {
+        lock.lock(); defer { lock.unlock() }
+        buffer.append(d)
+    }
+
+    var text: String {
+        lock.lock(); defer { lock.unlock() }
+        return String(data: buffer, encoding: .utf8) ?? ""
     }
 }
