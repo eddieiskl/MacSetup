@@ -22,7 +22,14 @@ final class AppLifecycle: NSObject, NSApplicationDelegate, UNUserNotificationCen
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Without this, clicking a notification only raises the app — so a
         // message that says "click to open Software Update" would be lying.
-        UNUserNotificationCenter.current().delegate = self
+        //
+        // Guarded: outside an app bundle `current()` does not return nil, it
+        // throws NSInternalInconsistencyException and takes the process with
+        // it. Running the binary directly is exactly what the CLI verbs and
+        // the launchd job do.
+        if Bundle.main.bundleIdentifier != nil {
+            UNUserNotificationCenter.current().delegate = self
+        }
 
         NotificationCenter.default.addObserver(
             forName: NSWindow.willCloseNotification, object: nil, queue: .main

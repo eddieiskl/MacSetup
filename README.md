@@ -416,6 +416,58 @@ attributed to MacSetup and can be clicked. A launchd job runs the binary outside
 an app context where that framework refuses to register, so there is an
 AppleScript fallback for that case.
 
+### The full-screen update screen
+
+Off by default. When enabled, a screen covering every display appears at login
+and at every unlock until macOS is updated.
+
+**It is MacSetup's own window, not System Settings.** macOS gives no app control
+over another app's windows — level, size and ordering belong to the owning
+process — so nothing can force Software Update full-screen and keep it on top.
+What is possible is MacSetup's own window doing that, with a button that opens
+Software Update. Every managed-update tool on macOS works this way, for the same
+reason.
+
+- appears after a configurable number of days (default 7)
+- sits at `.screenSaver` level: above ordinary windows and the menu bar, and
+  deliberately **not** above the login window or screen saver
+- covers every display, and re-fits when one is plugged in or removed
+- **a deferral is always offered.** It shortens from an hour to ten minutes past
+  the deadline, but never disappears. A screen with no way out can trap someone
+  mid-presentation on a laptop, which is an incident, not a policy. If you want
+  a harder block, that is a deliberate change to `NagPolicy.shouldShow`.
+
+To see it without turning it on:
+
+```bash
+/Applications/MacSetup.app/Contents/MacOS/MacSetup --nag --past-deadline
+```
+
+Needs **Start MacSetup at login** for the "after a restart" case, otherwise the
+app is not running to show anything.
+
+### Downloading macOS ahead of time
+
+The 18 GB does not have to be part of the interruption. `--fetch-full-installer`
+downloads *Install macOS <name>.app* into `/Applications`, which is an ordinary
+app download needing no special authorisation — unlike `softwareupdate -d`,
+which demands a volume owner's password even to stage a release.
+
+```bash
+/Applications/MacSetup.app/Contents/MacOS/MacSetup --cache-os-installer --dry-run
+/Applications/MacSetup.app/Contents/MacOS/MacSetup --cache-os-installer
+```
+
+It refuses if the disk lacks the download plus 15 GB of headroom — an installer
+that half-downloads overnight and leaves no room to log in is worse than none.
+Once cached, the update screen says *Already downloaded* and its button starts
+the installer instead of opening Software Update. The password is still needed
+to *run* it, which is the part only the user can do anyway.
+
+A cached installer only counts if its version matches the release being offered;
+an installer for an older macOS would look ready while installing the wrong
+thing.
+
 ### Reminding you about macOS itself
 
 App updates get installed for you. A macOS release cannot be — so it is the one

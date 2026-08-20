@@ -637,8 +637,36 @@ else
   bad "macOS reminder escalation" "$(grep FAIL /tmp/st-nudge.txt | head -3)"
 fi
 
+if $BIN --test-nag > /tmp/st-nag.txt 2>&1; then
+  ok "update screen policy ($(grep -c '^  ok' /tmp/st-nag.txt) cases)"
+else
+  bad "update screen policy" "$(grep FAIL /tmp/st-nag.txt | head -3)"
+fi
+
+# Regression: setting the notification delegate outside an app bundle raises
+# NSInternalInconsistencyException and kills the process. The CLI verbs and the
+# launchd job both run the binary that way.
+if $BIN --help >/tmp/st-bundle.txt 2>&1 && ! grep -q 'bundleProxyForCurrentProcess' /tmp/st-bundle.txt; then
+  ok "running outside an app bundle does not crash"
+else
+  bad "running outside an app bundle does not crash" "$(tail -3 /tmp/st-bundle.txt)"
+fi
+
+# The installer cache must never start a huge download implicitly.
+if $BIN --cache-os-installer --dry-run >/tmp/st-cache.txt 2>&1 \
+   && grep -qE 'would run: /usr/sbin/softwareupdate --fetch-full-installer' /tmp/st-cache.txt \
+   && ! grep -q '^running:' /tmp/st-cache.txt; then
+  ok "the installer cache dry run downloads nothing"
+elif grep -q 'no macOS release pending' /tmp/st-cache.txt; then
+  skip "no macOS release pending to cache"
+else
+  bad "the installer cache dry run downloads nothing" "$(tail -2 /tmp/st-cache.txt)"
+fi
+
 # Both test harnesses must be able to fail, or they are decoration.
-if ! $BIN --test-unlock --force-fail >/dev/null 2>&1 && ! $BIN --test-nudge --force-fail >/dev/null 2>&1; then
+if ! $BIN --test-unlock --force-fail >/dev/null 2>&1 \
+   && ! $BIN --test-nudge --force-fail >/dev/null 2>&1 \
+   && ! $BIN --test-nag --force-fail >/dev/null 2>&1; then
   ok "the unlock and reminder harnesses report failures when they occur"
 else
   bad "the unlock and reminder harnesses report failures when they occur" \

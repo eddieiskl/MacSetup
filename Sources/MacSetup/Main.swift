@@ -1,3 +1,4 @@
+import SwiftUI
 import Foundation
 import AppKit
 
@@ -241,6 +242,202 @@ enum Entry {
                     print("already reminded today (use --force to post anyway)")
                 }
                 flag.done = true
+            }
+            while !flag.done {
+                _ = RunLoop.main.run(mode: .default, before: Date().addingTimeInterval(0.05))
+            }
+            exit(0)
+        }
+
+        if let i = args.firstIndex(of: "--render-nag") {
+            // Renders the update screen offscreen, so it can be reviewed
+            // without covering the machine it is being built on.
+            let outDir = (i + 1 < args.count && !args[i + 1].hasPrefix("-"))
+                ? args[i + 1] : "/tmp/macsetup-nag"
+            final class Flag { var done = false }
+            let flag = Flag()
+            Task { @MainActor in
+                let release = SystemUpdate(label: "macOS Tahoe 26.7-25G220",
+                                           title: "macOS Tahoe 26.7", version: "26.7",
+                                           sizeKiB: 17_745_000, recommended: true,
+                                           requiresRestart: true)
+                let dir = URL(fileURLWithPath: outDir)
+                try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+                for (name, days, past, snooze) in [("nag-week", 7, false, 60),
+                                                   ("nag-overdue", 21, true, 10)] {
+                    let view = NagView(update: release, days: days, snoozeMinutes: snooze,
+                                       pastDeadline: past, onUpdate: {}, onSnooze: { _ in })
+                        .frame(width: 1280, height: 800)
+                    let r = ImageRenderer(content: view)
+                    r.scale = 2
+                    if let img = r.nsImage, let tiff = img.tiffRepresentation,
+                       let rep = NSBitmapImageRep(data: tiff),
+                       let png = rep.representation(using: .png, properties: [:]) {
+                        let u = dir.appendingPathComponent("\(name).png")
+                        try? png.write(to: u)
+                        print("wrote \(u.path)")
+                    }
+                }
+                flag.done = true
+            }
+            while !flag.done {
+                _ = RunLoop.main.run(mode: .default, before: Date().addingTimeInterval(0.05))
+            }
+            exit(0)
+        }
+
+        if args.contains("--cache-os-installer") {
+            // Downloads the macOS installer ahead of time. This is a large,
+            // slow download, so it reports what it is about to do, refuses
+            // without room, and never runs implicitly.
+            let dryRun = args.contains("--dry-run")
+            final class Flag { var done = false }
+            let flag = Flag()
+            Task { @MainActor in
+                let sys = SystemUpdateChecker()
+                await sys.check()
+                guard let release = sys.updates.first(where: \.isSystemRelease) else {
+                    print("no macOS release pending — nothing to cache")
+                    flag.done = true; return
+                }
+                if let already = OSInstallerCache.cached(matching: release) {
+                    print("already cached: \(already.url.path) (\(already.sizeText))")
+                    flag.done = true; return
+                }
+                let free = ByteCountFormatter.string(fromByteCount: OSInstallerCache.freeBytes(),
+                                                     countStyle: .file)
+                print("\(release.title) \(release.version) — \(release.sizeText) to download, \(free) free")
+                guard OSInstallerCache.hasRoomFor(sizeKiB: release.sizeKiB) else {
+                    print("not enough free space, leaving it alone")
+                    flag.done = true; return
+                }
+                let cmd = (["/usr/sbin/softwareupdate"]
+                           + OSInstallerCache.fetchArguments(version: release.version))
+                if dryRun {
+                    print("would run: \(cmd.joined(separator: " "))")
+                    flag.done = true; return
+                }
+                print("running: \(cmd.joined(separator: " "))")
+                let p = Process()
+                p.executableURL = URL(fileURLWithPath: cmd[0])
+                p.arguments = Array(cmd.dropFirst())
+                do { try p.run() } catch {
+                    print("could not start softwareupdate: \(error.localizedDescription)")
+                    flag.done = true; return
+                }
+                p.waitUntilExit()
+                if let got = OSInstallerCache.cached(matching: release) {
+                    print("cached: \(got.url.path) (\(got.sizeText))")
+                } else {
+                    print("softwareupdate exited \(p.terminationStatus) with no installer in /Applications")
+                }
+                flag.done = true
+            }
+            while !flag.done {
+                _ = RunLoop.main.run(mode: .default, before: Date().addingTimeInterval(0.05))
+            }
+            exit(0)
+        }
+
+        if args.contains("--test-nag") {
+            var failed = args.contains("--force-fail") ? 1 : 0
+            func check(_ label: String, _ ok: Bool) {
+                if !ok { failed += 1 }
+                print("  \(ok ? "ok  " : "FAIL") \(label)")
+            }
+
+            let on = NagPolicy(enabled: true, afterDays: 7, deadlineDays: 14,
+                               snoozeMinutes: 60, lateSnoozeMinutes: 10)
+            let off = NagPolicy(enabled: false, afterDays: 7, deadlineDays: 14,
+                                snoozeMinutes: 60, lateSnoozeMinutes: 10)
+            let now = Date()
+
+            check("disabled means never shown",
+                  !off.shouldShow(days: 400, snoozedUntil: nil, now: now))
+            check("not shown before the threshold",
+                  !on.shouldShow(days: 6, snoozedUntil: nil, now: now))
+            check("shown on the threshold day",
+                  on.shouldShow(days: 7, snoozedUntil: nil, now: now))
+            check("shown well past it",
+                  on.shouldShow(days: 90, snoozedUntil: nil, now: now))
+
+            check("an active snooze suppresses it",
+                  !on.shouldShow(days: 30, snoozedUntil: now.addingTimeInterval(600), now: now))
+            check("an expired snooze does not",
+                  on.shouldShow(days: 30, snoozedUntil: now.addingTimeInterval(-1), now: now))
+
+            check("a full hour before the deadline", on.snooze(days: 7) == 60)
+            check("still an hour the day before", on.snooze(days: 13) == 60)
+            check("short snooze on the deadline", on.snooze(days: 14) == 10)
+            check("short snooze long after", on.snooze(days: 365) == 10)
+            check("deadline predicate agrees",
+                  !on.isPastDeadline(days: 13) && on.isPastDeadline(days: 14))
+
+            // The safety valve. A screen with no way out can trap someone
+            // mid-presentation, so a deferral must always be honoured.
+            check("even a year late, a snooze still works",
+                  !on.shouldShow(days: 365, snoozedUntil: now.addingTimeInterval(300), now: now))
+
+            // The window must never be able to cover the lock screen.
+            let src = (try? String(contentsOfFile: "Sources/MacSetup/Views/NagWindow.swift",
+                                   encoding: .utf8)) ?? ""
+            if !src.isEmpty {
+                check("the screen sits at screenSaver level, not above the login window",
+                      src.contains("w.level = .screenSaver") && !src.contains("CGShieldingWindowLevel"))
+                check("it covers every display",
+                      src.contains("for screen in NSScreen.screens"))
+                check("it re-fits when displays change",
+                      src.contains("didChangeScreenParametersNotification"))
+                check("it always offers a way to defer", src.contains("onSnooze"))
+            }
+
+            // The cached installer must match the release being offered. An
+            // installer for an older macOS would look ready while installing
+            // the wrong thing.
+            let tahoe = SystemUpdate(label: "macOS Tahoe 26.7-25G220", title: "macOS Tahoe 26.7",
+                                     version: "26.7", sizeKiB: 17_745_000,
+                                     recommended: true, requiresRestart: true)
+            check("the fetch command is the documented one",
+                  OSInstallerCache.fetchArguments(version: "26.7")
+                  == ["--fetch-full-installer", "--full-installer-version", "26.7"])
+            check("a huge release is refused when the disk is nearly full",
+                  !OSInstallerCache.hasRoomFor(sizeKiB: 900_000_000))
+            check("a normal release fits on a healthy disk",
+                  OSInstallerCache.hasRoomFor(sizeKiB: tahoe.sizeKiB))
+            check("free space is actually readable", OSInstallerCache.freeBytes() > 0)
+            // Nothing is cached on this machine, so matching must say so
+            // rather than volunteering an unrelated installer.
+            check("no cached installer is claimed when none matches",
+                  OSInstallerCache.cached().isEmpty
+                  ? OSInstallerCache.cached(matching: tahoe) == nil
+                  : true)
+
+            print("\n\(failed == 0 ? "all nag cases passed" : "\(failed) nag cases failed")")
+            exit(failed == 0 ? 0 : 1)
+        }
+
+        if args.contains("--nag") {
+            // Shows the screen now, whatever the policy says, so it can be
+            // seen and judged before being turned on for anyone else.
+            final class Flag { var done = false }
+            let flag = Flag()
+            Task { @MainActor in
+                let sys = SystemUpdateChecker()
+                await sys.check()
+                guard let release = sys.updates.first(where: \.isSystemRelease) else {
+                    print("no macOS release pending — nothing to show")
+                    flag.done = true; return
+                }
+                let days = SystemUpdateNudge.age(of: release.label)
+                var policy = NagPolicy.current
+                policy.enabled = true
+                if args.contains("--past-deadline") { policy.deadlineDays = 0 }
+                NagWindowController.shared.onSnooze = { m in
+                    print("snoozed for \(m) minutes"); exit(0)
+                }
+                NagWindowController.shared.onUpdate = { print("opened Software Update") }
+                NagWindowController.shared.show(update: release, days: days, policy: policy)
+                print("showing the update screen — click a button to dismiss")
             }
             while !flag.done {
                 _ = RunLoop.main.run(mode: .default, before: Date().addingTimeInterval(0.05))

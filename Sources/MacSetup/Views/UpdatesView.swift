@@ -9,6 +9,43 @@ struct UpdatesView: View {
     @EnvironmentObject var store: AppStoreChecker
     @EnvironmentObject var staged: PendingRestartStore
     @AppStorage("unlockAction") private var unlockAction = UnlockAction.notify.rawValue
+    @AppStorage("nagEnabled") private var nagEnabled = false
+    @AppStorage("nagAfterDays") private var nagAfterDays = 7
+    @AppStorage("nagDeadlineDays") private var nagDeadlineDays = 14
+    @AppStorage("nagLateSnoozeMinutes") private var nagLateSnooze = 10
+    @State private var loginAtStart = LoginItem.isEnabled
+    @State private var loginError: String?
+    @State private var caching = false
+    @State private var cacheMessage: String?
+
+    /// Runs the same fetch the command line does, so the two cannot drift.
+    private func cacheInstaller() async {
+        guard let release = system.updates.first(where: \.isSystemRelease) else { return }
+        if let already = OSInstallerCache.cached(matching: release) {
+            cacheMessage = "Already downloaded (\(already.sizeText))"; return
+        }
+        guard OSInstallerCache.hasRoomFor(sizeKiB: release.sizeKiB) else {
+            cacheMessage = "Not enough free space for \(release.sizeText)"; return
+        }
+        caching = true
+        cacheMessage = "Downloading \(release.sizeText) in the background…"
+        let args = OSInstallerCache.fetchArguments(version: release.version)
+        let done: Bool = await Task.detached {
+            let p = Process()
+            p.executableURL = URL(fileURLWithPath: "/usr/sbin/softwareupdate")
+            p.arguments = args
+            do { try p.run() } catch { return false }
+            p.waitUntilExit()
+            return p.terminationStatus == 0
+        }.value
+        caching = false
+        if let got = OSInstallerCache.cached(matching: release) {
+            cacheMessage = "Ready — \(got.sizeText) downloaded"
+        } else {
+            cacheMessage = done ? "Finished, but no installer appeared in /Applications"
+                                : "The download did not complete"
+        }
+    }
 
     /// Spelled out because the three options behave very differently, and the
     /// macOS-release caveat is not something anyone would guess.
@@ -165,6 +202,61 @@ struct UpdatesView: View {
             }
 
             Divider().padding(.vertical, 2)
+
+            HStack(spacing: 10) {
+                Toggle("Start MacSetup at login", isOn: Binding(
+                    get: { loginAtStart },
+                    set: { on in
+                        loginError = LoginItem.set(on)
+                        loginAtStart = LoginItem.isEnabled
+                    }))
+                    .toggleStyle(.checkbox).font(.system(size: 12))
+                Text(LoginItem.statusText)
+                    .font(.system(size: 11)).foregroundStyle(.tertiary)
+                Spacer()
+            }
+            if let loginError {
+                Text(loginError).font(.system(size: 11)).foregroundStyle(.red)
+            }
+
+            HStack(spacing: 10) {
+                Toggle("Show a full-screen reminder until macOS is updated", isOn: Binding(
+                    get: { nagEnabled },
+                    set: { nagEnabled = $0 }))
+                    .toggleStyle(.checkbox).font(.system(size: 12))
+                if nagEnabled {
+                    Text("after").font(.system(size: 12)).foregroundStyle(.secondary)
+                    Picker("", selection: Binding(get: { nagAfterDays }, set: { nagAfterDays = $0 })) {
+                        ForEach([0, 3, 7, 14, 30], id: \.self) { d in
+                            Text(d == 0 ? "straight away" : "\(d) days").tag(d)
+                        }
+                    }.labelsHidden().pickerStyle(.menu).fixedSize()
+                }
+                Spacer()
+            }
+
+            Text(nagEnabled
+                 ? "Covers every display at login and at each unlock, until the update is installed. "
+                 + "A deferral is always offered — it shortens to \(nagLateSnooze) minutes after "
+                 + "\(nagDeadlineDays) days, but never disappears, so nobody gets trapped mid-presentation."
+                 : "Off. macOS updates are only mentioned in notifications.")
+                .font(.system(size: 11)).foregroundStyle(.tertiary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack(spacing: 10) {
+                Button {
+                    cacheMessage = "Starting the download…"
+                    Task { await cacheInstaller() }
+                } label: {
+                    Label("Download the macOS installer now", systemImage: "arrow.down.circle")
+                }
+                .disabled(caching || !system.updates.contains(where: \.isSystemRelease))
+                .help("Fetches the full installer ahead of time, so updating later is quick")
+                if let cacheMessage {
+                    Text(cacheMessage).font(.system(size: 11)).foregroundStyle(.secondary)
+                }
+                Spacer()
+            }
 
             HStack(spacing: 10) {
                 Text("When you next unlock this Mac")

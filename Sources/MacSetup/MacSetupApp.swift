@@ -76,11 +76,19 @@ struct MacSetupApp: App {
                         Notifier.post(title: nudge.title, body: nudge.body, id: "macsetup.osupdate")
                         SystemUpdateNudge.recordNotified()
                     }
+                    considerNag()
 
                     // Offer any staged restart-update when the user comes back,
                     // rather than interrupting them now or rebooting overnight.
                     unlock.onUnlock = { handleUnlock() }
                     unlock.start()
+
+                    // A snooze has to expire on its own. Without this the
+                    // screen would only ever come back at the next unlock, so
+                    // "remind me in an hour" could mean "never".
+                    Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { _ in
+                        MainActor.assumeIsolated { considerNag() }
+                    }
                 }
         }
         .windowToolbarStyle(.unified)
@@ -146,6 +154,28 @@ struct MacSetupApp: App {
     /// because Apple Silicon wants a volume owner's credentials. For that one,
     /// the most MacSetup can honestly do is open Software Update and let macOS
     /// ask for the password itself.
+    /// Shows the full-screen update screen if policy says it is due.
+    ///
+    /// Runs at launch (which covers login and restart) and at every unlock.
+    private func considerNag() {
+        let policy = NagPolicy.current
+        guard policy.enabled else { return }
+        guard let release = system.updates.first(where: \.isSystemRelease) else {
+            // Installed, or no longer offered: drop any snooze so the next
+            // release starts from a clean slate.
+            NagPolicy.clearSnooze()
+            NagWindowController.shared.dismiss()
+            return
+        }
+        let days = SystemUpdateNudge.age(of: release.label)
+        guard policy.shouldShow(days: days, snoozedUntil: NagPolicy.snoozedUntil) else { return }
+
+        NagWindowController.shared.onSnooze = { minutes in
+            NagPolicy.snoozedUntil = Date().addingTimeInterval(TimeInterval(minutes * 60))
+        }
+        NagWindowController.shared.show(update: release, days: days, policy: policy)
+    }
+
     private func handleUnlock() {
         Task { @MainActor in
             staged.load()
@@ -164,6 +194,8 @@ struct MacSetupApp: App {
                 Notifier.post(title: nudge.title, body: nudge.body, id: "macsetup.osupdate")
                 SystemUpdateNudge.recordNotified()
             }
+
+            considerNag()
 
             let plan = UnlockPlan.make(staged: staged.staged, available: system.updates)
             guard !plan.isEmpty else { return }
