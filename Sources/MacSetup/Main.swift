@@ -216,6 +216,105 @@ enum Entry {
             exit(failed == 0 ? 0 : 1)
         }
 
+        if args.contains("--remind-os") {
+            // Posts the macOS reminder now. `--force` ignores the once-a-day
+            // throttle, which is how you see what the notification looks like
+            // without waiting for tomorrow.
+            let force = args.contains("--force")
+            // Pumping the run loop rather than blocking on a semaphore: the
+            // work below is main-actor isolated, so a blocking wait on this
+            // thread would deadlock against the task that needs it.
+            final class Flag { var done = false }
+            let flag = Flag()
+            Task { @MainActor in
+                let sys = SystemUpdateChecker()
+                await sys.check()
+                if force { UserDefaults.standard.removeObject(forKey: "systemUpdateNotifiedAt") }
+                if let nudge = SystemUpdateNudge.pending(in: sys.updates) {
+                    Notifier.post(title: nudge.title, body: nudge.body, id: "macsetup.osupdate")
+                    SystemUpdateNudge.recordNotified()
+                    print("posted: \(nudge.title)")
+                    print("        \(nudge.body)")
+                } else if !sys.updates.contains(where: \.isSystemRelease) {
+                    print("no macOS release pending — nothing to remind about")
+                } else {
+                    print("already reminded today (use --force to post anyway)")
+                }
+                flag.done = true
+            }
+            while !flag.done {
+                _ = RunLoop.main.run(mode: .default, before: Date().addingTimeInterval(0.05))
+            }
+            exit(0)
+        }
+
+        if args.contains("--test-nudge") {
+            var failed = args.contains("--force-fail") ? 1 : 0
+            func check(_ label: String, _ ok: Bool) {
+                if !ok { failed += 1 }
+                print("  \(ok ? "ok  " : "FAIL") \(label)")
+            }
+
+            // Escalation boundaries. Off-by-one here means telling someone
+            // their Mac is "a month out of date" on day 29.
+            let cases: [(Int, SystemUpdateNudge.Urgency, String)] = [
+                (0,  .fresh,   "the day it appears"),
+                (6,  .fresh,   "still fresh at six days"),
+                (7,  .due,     "due at exactly a week"),
+                (13, .due,     "still due at thirteen days"),
+                (14, .overdue, "overdue at exactly two weeks"),
+                (29, .overdue, "still overdue at twenty-nine days"),
+                (30, .late,    "late at exactly thirty days"),
+                (400, .late,   "no level beyond late"),
+            ]
+            for (days, expected, label) in cases {
+                check("\(label) -> \(expected)", SystemUpdateNudge.Urgency.forAge(days: days) == expected)
+            }
+
+            let release = SystemUpdate(label: "macOS Tahoe 26.7-25G220", title: "macOS Tahoe 26.7",
+                                       version: "26.7", sizeKiB: 17_300_000,
+                                       recommended: true, requiresRestart: true)
+            let safari = SystemUpdate(label: "Safari27.0", title: "Safari", version: "27.0",
+                                      sizeKiB: 100_000, recommended: true, requiresRestart: true)
+
+            // Every message has to name the update and point somewhere useful,
+            // or it is a notification that tells the user nothing.
+            for u in [SystemUpdateNudge.Urgency.fresh, .due, .overdue, .late] {
+                let b = SystemUpdateNudge.body(for: release, urgency: u, days: 20)
+                check("the \(u) message names the release", b.contains("macOS Tahoe 26.7"))
+                check("the \(u) message says where to go", b.contains("Software Update"))
+                check("the \(u) message gives the size", b.contains("16.5 GB") || b.contains("GB"))
+                check("the \(u) title is not empty",
+                      !SystemUpdateNudge.title(for: release, urgency: u).isEmpty)
+            }
+
+            // Only a macOS release earns this reminder; Safari is installed for
+            // the user, so nagging about it would be wrong.
+            UserDefaults.standard.removeObject(forKey: "systemUpdateNotifiedAt")
+            check("Safari alone raises no OS reminder",
+                  SystemUpdateNudge.pending(in: [safari]) == nil)
+            check("nothing pending raises no OS reminder",
+                  SystemUpdateNudge.pending(in: []) == nil)
+
+            UserDefaults.standard.removeObject(forKey: "systemUpdateNotifiedAt")
+            check("a macOS release does raise a reminder",
+                  SystemUpdateNudge.pending(in: [safari, release]) != nil)
+            // Immediately afterwards it must stay quiet for the day.
+            SystemUpdateNudge.recordNotified()
+            check("it does not repeat within the day",
+                  SystemUpdateNudge.pending(in: [release]) == nil)
+            check("it speaks again after a day",
+                  SystemUpdateNudge.pending(in: [release],
+                                            now: Date().addingTimeInterval(21 * 3600)) != nil)
+
+            // Cleanup, so a test run does not silence the real reminder.
+            UserDefaults.standard.removeObject(forKey: "systemUpdateNotifiedAt")
+            UserDefaults.standard.removeObject(forKey: "systemUpdateFirstSeen")
+
+            print("\n\(failed == 0 ? "all nudge cases passed" : "\(failed) nudge cases failed")")
+            exit(failed == 0 ? 0 : 1)
+        }
+
         if args.contains("--test-unlock") {
             // The unlock rules decide whether a password dialog appears in
             // someone's face, so they are pinned rather than eyeballed.
@@ -337,6 +436,17 @@ enum Entry {
                     }
                     for n in skippedRunning { print("  skipped (running): \(n)") }
                     for n in skippedPrivileged { print("  skipped (needs an administrator): \(n)") }
+
+                    // A macOS release gets its own reminder, on every run and
+                    // regardless of what else is pending. It is the one update
+                    // nobody can install on the user's behalf, so it is the one
+                    // that otherwise sits ignored for months.
+                    if !dryRun, let nudge = SystemUpdateNudge.pending(in: sys.updates) {
+                        Notifier.post(title: nudge.title, body: nudge.body,
+                                      id: "macsetup.osupdate")
+                        SystemUpdateNudge.recordNotified()
+                        print("  reminded: \(nudge.title)")
+                    }
 
                     let appleCount = allowPrompt ? sys.updates.count : 0
                     if (eligible.isEmpty && appleCount == 0) || dryRun {

@@ -28,12 +28,15 @@ struct WindowFitter: NSViewRepresentable {
     @ObservedObject var metrics: WindowMetrics
     var minSize = NSSize(width: 720, height: 480)
     var preferred = NSSize(width: 1180, height: 800)
+    /// Open filling the screen's usable area rather than at `preferred`.
+    var maximized = true
 
     func makeNSView(context: Context) -> NSView {
         let view = NSView(frame: .zero)
         DispatchQueue.main.async {
             context.coordinator.attach(to: view.window, min: minSize,
-                                       preferred: preferred, metrics: metrics)
+                                       preferred: preferred, maximized: maximized,
+                                       metrics: metrics)
         }
         return view
     }
@@ -41,7 +44,8 @@ struct WindowFitter: NSViewRepresentable {
     func updateNSView(_ nsView: NSView, context: Context) {
         DispatchQueue.main.async {
             context.coordinator.attach(to: nsView.window, min: minSize,
-                                       preferred: preferred, metrics: metrics)
+                                       preferred: preferred, maximized: maximized,
+                                       metrics: metrics)
         }
     }
 
@@ -52,12 +56,15 @@ struct WindowFitter: NSViewRepresentable {
         private var tokens: [NSObjectProtocol] = []
         private var minSize = NSSize(width: 720, height: 480)
         private var preferred = NSSize(width: 1180, height: 800)
+        private var maximized = true
         private var metrics: WindowMetrics?
 
-        func attach(to window: NSWindow?, min: NSSize, preferred: NSSize, metrics: WindowMetrics) {
+        func attach(to window: NSWindow?, min: NSSize, preferred: NSSize,
+                    maximized: Bool, metrics: WindowMetrics) {
             guard let window else { return }
             self.minSize = min
             self.preferred = preferred
+            self.maximized = maximized
             self.metrics = metrics
             if self.window !== window {
                 self.window = window
@@ -74,7 +81,10 @@ struct WindowFitter: NSViewRepresentable {
                       NSWindow.didResizeNotification, NSWindow.didEndLiveResizeNotification]
                 .map { name in
                     NotificationCenter.default.addObserver(forName: name, object: window, queue: .main) { [weak self] _ in
-                        self?.applyLimits(initial: false)
+                        // The observer is registered on .main, so this is
+                        // already the main actor — the compiler just cannot
+                        // see that through the queue argument.
+                        MainActor.assumeIsolated { self?.applyLimits(initial: false) }
                     }
                 }
         }
@@ -82,7 +92,11 @@ struct WindowFitter: NSViewRepresentable {
         private func applyLimits(initial: Bool) {
             guard let window, let screen = window.screen ?? NSScreen.main else { return }
             let usable = screen.visibleFrame
-            let margin: CGFloat = 12
+            // Maximised means filling the usable area exactly. `visibleFrame`
+            // already excludes the menu bar and the Dock, so this fills the
+            // screen without hiding the action bar behind the Dock — which is
+            // the failure mode a naive "full screen height" would reintroduce.
+            let margin: CGFloat = maximized ? 0 : 12
             let cap = NSSize(width: usable.width - margin * 2, height: usable.height - margin * 2)
 
             window.minSize = NSSize(width: Swift.min(minSize.width, cap.width),
@@ -94,8 +108,9 @@ struct WindowFitter: NSViewRepresentable {
             frame.size.width = Swift.min(frame.width, cap.width)
             frame.size.height = Swift.min(frame.height, cap.height)
             if initial {
-                frame.size.width = Swift.min(preferred.width, cap.width)
-                frame.size.height = Swift.min(preferred.height, cap.height)
+                let want = maximized ? cap : preferred
+                frame.size.width = Swift.min(want.width, cap.width)
+                frame.size.height = Swift.min(want.height, cap.height)
                 frame.origin.x = usable.midX - frame.width / 2
                 frame.origin.y = usable.midY - frame.height / 2
             }

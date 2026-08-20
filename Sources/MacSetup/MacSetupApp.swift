@@ -6,6 +6,9 @@ struct MacSetupApp: App {
     /// instead of quitting, and the Dock icon is dropped.
     @AppStorage("liveInMenuBar") private var liveInMenuBar = true
     @AppStorage("showMenuBarItem") private var showMenuBarItem = true
+    /// Open filling the screen. The panes hold a lot, and a maximised window
+    /// is the difference between scrolling constantly and seeing the list.
+    @AppStorage("openMaximized") private var openMaximized = true
     @NSApplicationDelegateAdaptor(AppLifecycle.self) private var lifecycle
 
     /// A plain AppKit window, so About behaves like every other Mac app's.
@@ -57,7 +60,7 @@ struct MacSetupApp: App {
                 .environmentObject(system)
                 .environmentObject(store)
                 .environmentObject(staged)
-                .background(WindowFitter(metrics: metrics))
+                .background(WindowFitter(metrics: metrics, maximized: openMaximized))
                 .task {
                     // A moment after launch, so it never competes with the
                     // first render.
@@ -67,6 +70,12 @@ struct MacSetupApp: App {
                     await system.check()
                     await store.check()
                     staged.reconcile(with: system.updates)
+                    // Same reminder as the scheduled run, so it still appears
+                    // for anyone who never turned the schedule on.
+                    if let nudge = SystemUpdateNudge.pending(in: system.updates) {
+                        Notifier.post(title: nudge.title, body: nudge.body, id: "macsetup.osupdate")
+                        SystemUpdateNudge.recordNotified()
+                    }
 
                     // Offer any staged restart-update when the user comes back,
                     // rather than interrupting them now or rebooting overnight.
@@ -83,6 +92,16 @@ struct MacSetupApp: App {
                 Button("About MacSetup") { openAbout() }
             }
             CommandGroup(replacing: .newItem) { }
+            CommandGroup(after: .windowSize) {
+                Toggle("Open Maximised", isOn: $openMaximized)
+                Button("Maximise Now") {
+                    if let w = NSApp.keyWindow ?? NSApp.mainWindow,
+                       let screen = w.screen ?? NSScreen.main {
+                        w.setFrame(screen.visibleFrame, display: true, animate: true)
+                    }
+                }
+                .keyboardShortcut("m", modifiers: [.command, .control])
+            }
             CommandMenu("Selection") {
                 Button("Select All Visible") { state.selectAllVisible() }
                     .keyboardShortcut("a", modifiers: [.command, .shift])
@@ -140,6 +159,11 @@ struct MacSetupApp: App {
                 await system.check()
             }
             staged.reconcile(with: system.updates)
+
+            if let nudge = SystemUpdateNudge.pending(in: system.updates) {
+                Notifier.post(title: nudge.title, body: nudge.body, id: "macsetup.osupdate")
+                SystemUpdateNudge.recordNotified()
+            }
 
             let plan = UnlockPlan.make(staged: staged.staged, available: system.updates)
             guard !plan.isEmpty else { return }

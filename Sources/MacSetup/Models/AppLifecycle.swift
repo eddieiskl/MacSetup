@@ -1,4 +1,5 @@
 import AppKit
+import UserNotifications
 import SwiftUI
 
 /// Keeps the app alive in the menu bar after its window is closed.
@@ -7,7 +8,7 @@ import SwiftUI
 /// every time you want to know whether anything needs updating. Closing the
 /// window drops the Dock icon (activation policy `.accessory`) and leaves the
 /// menu bar item; reopening restores it. Quit still quits.
-final class AppLifecycle: NSObject, NSApplicationDelegate {
+final class AppLifecycle: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate {
 
     /// Set from the app's preference; when false the app behaves normally.
     static var liveInMenuBar: Bool {
@@ -19,6 +20,10 @@ final class AppLifecycle: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Without this, clicking a notification only raises the app — so a
+        // message that says "click to open Software Update" would be lying.
+        UNUserNotificationCenter.current().delegate = self
+
         NotificationCenter.default.addObserver(
             forName: NSWindow.willCloseNotification, object: nil, queue: .main
         ) { note in
@@ -34,6 +39,33 @@ final class AppLifecycle: NSObject, NSApplicationDelegate {
                     NSApp.setActivationPolicy(.accessory)   // menu bar only
                 }
             }
+        }
+    }
+
+    /// Show our notifications even while MacSetup is the front app, otherwise
+    /// macOS swallows them and the user sees nothing.
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                willPresent notification: UNNotification,
+                                withCompletionHandler completionHandler:
+                                    @escaping (UNNotificationPresentationOptions) -> Void) {
+        completionHandler([.banner, .sound])
+    }
+
+    /// Acting on a click. The macOS reminder goes straight to Software Update,
+    /// which is the only thing that can install a macOS release; everything
+    /// else opens MacSetup.
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                didReceive response: UNNotificationResponse,
+                                withCompletionHandler completionHandler: @escaping () -> Void) {
+        let id = response.notification.request.identifier
+        Task { @MainActor in
+            if id == "macsetup.osupdate" {
+                UnlockThrottle.openSoftwareUpdate()
+            } else {
+                NSApp.setActivationPolicy(.regular)
+                NSApp.activate()
+            }
+            completionHandler()
         }
     }
 

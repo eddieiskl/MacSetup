@@ -59,6 +59,16 @@ else
   echo; echo "Build failed — stopping."; exit 1
 fi
 
+# The release build is what ships, and it emits strict-concurrency warnings the
+# debug build does not. Checking only debug let those reach a release once.
+if swift build -c release --triple arm64-apple-macosx13.0 >/tmp/st-rel.log 2>&1; then
+  if grep -q 'warning:' /tmp/st-rel.log; then
+    bad "release build is warning-free" "$(grep -c 'warning:' /tmp/st-rel.log) warning(s)"
+  else ok "release build is warning-free"; fi
+else
+  bad "release build succeeds" "$(tail -3 /tmp/st-rel.log)"
+fi
+
 # ---------------------------------------------------------------- catalogue
 section "1. Catalogue integrity"
 python3 - "$CATALOG" <<'PY' > /tmp/st-cat.txt 2>&1
@@ -619,6 +629,39 @@ if $BIN --test-unlock > /tmp/st-unlock.txt 2>&1; then
   ok "unlock rules ($(grep -c '^  ok' /tmp/st-unlock.txt) cases)"
 else
   bad "unlock rules" "$(grep FAIL /tmp/st-unlock.txt | head -3)"
+fi
+
+if $BIN --test-nudge > /tmp/st-nudge.txt 2>&1; then
+  ok "macOS reminder escalation ($(grep -c '^  ok' /tmp/st-nudge.txt) cases)"
+else
+  bad "macOS reminder escalation" "$(grep FAIL /tmp/st-nudge.txt | head -3)"
+fi
+
+# Both test harnesses must be able to fail, or they are decoration.
+if ! $BIN --test-unlock --force-fail >/dev/null 2>&1 && ! $BIN --test-nudge --force-fail >/dev/null 2>&1; then
+  ok "the unlock and reminder harnesses report failures when they occur"
+else
+  bad "the unlock and reminder harnesses report failures when they occur" \
+      "--force-fail exited 0; the assertions may be optimised away"
+fi
+
+# The reminder text tells the user to click it, so a click handler must exist.
+if grep -q 'macsetup.osupdate' Sources/MacSetup/Models/AppLifecycle.swift \
+   && grep -q 'didReceive response' Sources/MacSetup/Models/AppLifecycle.swift \
+   && grep -q 'UNUserNotificationCenter.current().delegate = self' Sources/MacSetup/Models/AppLifecycle.swift; then
+  ok "the macOS reminder's \"click to open\" is backed by a handler"
+else
+  bad "the macOS reminder's \"click to open\" is backed by a handler"
+fi
+
+# Opening maximised must use visibleFrame, which excludes the Dock and menu
+# bar — a naive full-screen frame hides the action bar behind the Dock again.
+if grep -q 'maximized ? 0 : 12' Sources/MacSetup/Views/WindowFitter.swift \
+   && grep -q 'maximized ? cap : preferred' Sources/MacSetup/Views/WindowFitter.swift \
+   && grep -q 'openMaximized' Sources/MacSetup/MacSetupApp.swift; then
+  ok "maximised windows fill the usable area, not the whole screen"
+else
+  bad "maximised windows fill the usable area, not the whole screen"
 fi
 
 # The pane MacSetup opens for a macOS release must actually exist, or the

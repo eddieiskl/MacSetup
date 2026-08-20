@@ -416,6 +416,37 @@ attributed to MacSetup and can be clicked. A launchd job runs the binary outside
 an app context where that framework refuses to register, so there is an
 AppleScript fallback for that case.
 
+### Reminding you about macOS itself
+
+App updates get installed for you. A macOS release cannot be — so it is the one
+update that sits ignored for months, and the one where being out of date matters
+most. MacSetup therefore reminds you about it separately, and gets more direct
+as the weeks pass:
+
+| Age | Notification |
+| --- | --- |
+| new | *macOS Tahoe 26.7 is available* |
+| 7 days | *Time to update macOS* |
+| 14 days | *macOS is two weeks out of date* |
+| 30 days | *macOS is a month out of date* |
+
+Clicking the notification opens Software Update directly. At most one of these a
+day, and the age is counted from when Apple first offered the release, not from
+when you installed MacSetup.
+
+To see one immediately:
+
+```bash
+/Applications/MacSetup.app/Contents/MacOS/MacSetup --remind-os --force
+```
+
+### Window size
+
+MacSetup opens filling the screen's usable area. `visibleFrame` excludes the
+menu bar and the Dock, so "maximised" never means hiding the action bar behind
+the Dock. Turn it off with **Window ▸ Open Maximised**, or maximise the current
+window with ⌃⌘M.
+
 ### When you come back to the Mac
 
 An update that needs a restart is downloaded overnight but never installed while

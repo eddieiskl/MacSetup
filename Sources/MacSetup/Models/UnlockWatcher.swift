@@ -24,14 +24,15 @@ final class UnlockWatcher: ObservableObject {
         tokens.append(distributed.addObserver(
             forName: NSNotification.Name("com.apple.screenIsUnlocked"),
             object: nil, queue: .main
-        ) { [weak self] _ in self?.fire() })
+        ) { [weak self] _ in MainActor.assumeIsolated { self?.fire() } })
 
         let workspace = NSWorkspace.shared.notificationCenter
         // Fast user switching back to this session, and waking from sleep.
         for name in [NSWorkspace.sessionDidBecomeActiveNotification,
                      NSWorkspace.didWakeNotification] {
             tokens.append(workspace.addObserver(forName: name, object: nil, queue: .main) {
-                [weak self] _ in self?.fire()
+                // Registered on .main, so this is already the main actor.
+                [weak self] _ in MainActor.assumeIsolated { self?.fire() }
             })
         }
     }
