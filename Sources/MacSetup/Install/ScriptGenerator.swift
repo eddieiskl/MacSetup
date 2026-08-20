@@ -22,6 +22,11 @@ enum ScriptGenerator {
     /// elevated batch as everything else.
     static func buildSystemUpdates(_ updates: [SystemUpdate],
                                    options: ScriptOptions = ScriptOptions()) -> String {
+        // Last line of defence. `softwareupdate -i` on a macOS release
+        // downloads the whole thing and only then reports "Failed to
+        // authenticate", so emitting the job at all costs gigabytes for a
+        // guaranteed failure.
+        let updates = updates.filter { !$0.isSystemRelease }
         var out = """
         #!/bin/bash
         #
@@ -91,6 +96,12 @@ enum ScriptGenerator {
                       browser: BrowserInfo? = nil,
                       options: ScriptOptions = ScriptOptions(),
                       arch: Arch = .current) -> String {
+
+        // Same guard as buildSystemUpdates: a macOS release must never reach
+        // the queue, from any entry point. It downloads gigabytes and then
+        // fails to authenticate, every time.
+        let systemUpdates = systemUpdates.filter { !$0.isSystemRelease }
+        let stagedUpdates = stagedUpdates.filter { !$0.isSystemRelease }
 
         var out = header(apps: apps, tweaks: tweaks, webApps: webApps,
                          browser: browser, arch: arch, options: options)

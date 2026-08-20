@@ -100,7 +100,9 @@ enum OSInstallerCache {
         if permanent.contains(where: l.contains) { return false }
         let transient = ["offline", "timed out", "timeout", "network",
                          "connection", "-1009", "-1005", "-1001",
-                         "pkdownloaderror", "installation failed"]
+                         "pkdownloaderror", "installation failed",
+                         // A watchdog kill produces no error text of its own.
+                         "stalled", "no progress"]
         return transient.contains(where: l.contains)
     }
 
@@ -112,6 +114,42 @@ enum OSInstallerCache {
         // loop rather than a long wait.
         let steps = min(max(0, attempt - 1), 16)
         return min(300, 30 * (1 << steps))
+    }
+
+    /// How long the download may say nothing before it is treated as wedged.
+    ///
+    /// Learned the hard way: `softwareupdate` does not always fail when the
+    /// network goes. Sometimes it simply stops — zero CPU, no output, process
+    /// still alive. Retrying on exit alone means a hung download is waited on
+    /// forever, which is a worse failure than an error, because nothing ever
+    /// reports it.
+    static let stallTimeout: TimeInterval = 12 * 60
+
+    /// Whether a run that has produced no output since `lastOutput` is stuck.
+    static func isStalled(lastOutput: Date, now: Date = Date()) -> Bool {
+        now.timeIntervalSince(lastOutput) > stallTimeout
+    }
+
+    /// Another `softwareupdate` already working is a reason not to start.
+    ///
+    /// Two sessions competing for `softwareupdated` is a known way to wedge
+    /// both — which is exactly how the first cache attempt died, when an
+    /// install was tried while a fetch was running.
+    static func softwareUpdateIsBusy() -> Bool {
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep")
+        p.arguments = ["-f", "softwareupdate --"]
+        let pipe = Pipe()
+        p.standardOutput = pipe
+        p.standardError = Pipe()
+        do { try p.run() } catch { return false }
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        p.waitUntilExit()
+        let mine = String(ProcessInfo.processInfo.processIdentifier)
+        let pids = String(data: data, encoding: .utf8)?
+            .split(separator: "\n").map(String.init)
+            .filter { $0 != mine } ?? []
+        return !pids.isEmpty
     }
 
     @discardableResult
@@ -128,10 +166,22 @@ enum OSInstallerCache {
 final class OutputSink: @unchecked Sendable {
     private let lock = NSLock()
     private var buffer = Data()
+    private var last = Date()
 
     func append(_ d: Data) {
         lock.lock(); defer { lock.unlock() }
         buffer.append(d)
+        last = Date()
+    }
+
+    /// When output was last seen, for the stall watchdog.
+    var lastWrite: Date {
+        lock.lock(); defer { lock.unlock() }
+        return last
+    }
+
+    var wasStalled: Bool {
+        OSInstallerCache.isStalled(lastOutput: lastWrite)
     }
 
     var text: String {

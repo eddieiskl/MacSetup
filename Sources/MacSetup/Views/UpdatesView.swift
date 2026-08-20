@@ -418,7 +418,11 @@ struct UpdatesView: View {
                         Text("\(state.selectedSystemUpdates.count) of \(system.updates.count)")
                             .font(.caption).foregroundStyle(.secondary)
                         Button("Select All") {
-                            state.selectedSystemUpdates = Set(system.updates.map(\.label))
+                            // Never a macOS release: selecting one would queue
+                            // softwareupdate -i, which downloads gigabytes and
+                            // then always fails to authenticate.
+                            state.selectedSystemUpdates = Set(
+                                system.updates.filter { !$0.isSystemRelease }.map(\.label))
                         }
                         .buttonStyle(.plain).font(.caption).foregroundStyle(.tint)
                         Button("None") { state.selectedSystemUpdates.removeAll() }
@@ -443,18 +447,35 @@ struct UpdatesView: View {
                 } else {
                     ForEach(system.updates) { u in
                         Button {
-                            if state.selectedSystemUpdates.contains(u.label) {
+                            // A macOS release is not a checkbox. It cannot be
+                            // installed by this app at all, so the row does the
+                            // only thing that works instead of queueing a run
+                            // that is guaranteed to fail.
+                            if u.isSystemRelease {
+                                if let ready = OSInstallerCache.cached(matching: u) {
+                                    OSInstallerCache.open(ready)
+                                } else {
+                                    UnlockThrottle.openSoftwareUpdate()
+                                }
+                            } else if state.selectedSystemUpdates.contains(u.label) {
                                 state.selectedSystemUpdates.remove(u.label)
                             } else {
                                 state.selectedSystemUpdates.insert(u.label)
                             }
                         } label: {
                             HStack(spacing: 9) {
-                                Image(systemName: state.selectedSystemUpdates.contains(u.label)
-                                      ? "checkmark.circle.fill" : "circle")
+                                // No checkbox on a macOS release: it is not
+                                // something this app can queue, and offering a
+                                // tick implies otherwise.
+                                Image(systemName: u.isSystemRelease
+                                      ? "arrow.up.forward.app"
+                                      : (state.selectedSystemUpdates.contains(u.label)
+                                         ? "checkmark.circle.fill" : "circle"))
                                     .font(.system(size: 15))
-                                    .foregroundStyle(state.selectedSystemUpdates.contains(u.label)
-                                                     ? Color.accentColor : Color.secondary.opacity(0.5))
+                                    .foregroundStyle(u.isSystemRelease
+                                                     ? Color.secondary
+                                                     : (state.selectedSystemUpdates.contains(u.label)
+                                                        ? Color.accentColor : Color.secondary.opacity(0.5)))
                                 Image(systemName: u.requiresRestart ? "restart.circle" : "apple.logo")
                                     .foregroundStyle(u.requiresRestart ? Color.orange : Color.secondary)
                                     .frame(width: 16)

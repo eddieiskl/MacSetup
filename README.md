@@ -464,6 +464,14 @@ which demands a volume owner's password even to stage a release.
 /Applications/MacSetup.app/Contents/MacOS/MacSetup --cache-os-installer
 ```
 
+`softwareupdate` does not always fail cleanly. It can simply stop: zero CPU, no
+output, process still alive. Retrying on exit alone waits on that forever, so a
+watchdog kills a run that has produced no output for 12 minutes and retries it.
+
+Only one `softwareupdate` runs at a time. Two sessions competing for
+`softwareupdated` is a known way to wedge both — which is how the first cache
+attempt died here, when an install was attempted while a fetch was running.
+
 An 18 GB download over wifi will sometimes fail partway — that is ordinary, not
 exceptional — so it retries up to four times with a growing backoff. It retries
 only reasons a retry can fix: a dropped connection yes, out of disk or a version

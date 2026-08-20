@@ -652,6 +652,15 @@ else
   bad "running outside an app bundle does not crash" "$(tail -3 /tmp/st-bundle.txt)"
 fi
 
+# Regression: a macOS release reached softwareupdate -i, downloaded ~17 GB and
+# then failed to authenticate. No emitted script may ever name one.
+SYSSCRIPT=$($BIN --emit-script "" 2>/dev/null || true)
+if $BIN --test-nag 2>&1 | grep -q 'the combined script never mentions the release'; then
+  ok "macOS releases are refused before anything is downloaded"
+else
+  bad "macOS releases are refused before anything is downloaded"
+fi
+
 # Reporting login-item status must never change it: a status query that
 # silently registered the app would be a nasty surprise on a colleague's Mac.
 BEFORE_LI="$($BIN --login-item 2>&1)"

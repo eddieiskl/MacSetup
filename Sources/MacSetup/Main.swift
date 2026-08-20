@@ -336,6 +336,10 @@ enum Entry {
                     print("not enough free space, leaving it alone")
                     flag.done = true; return
                 }
+                if OSInstallerCache.softwareUpdateIsBusy() {
+                    print("another softwareupdate is already running — not starting a second one")
+                    flag.done = true; return
+                }
                 let cmd = (["/usr/sbin/softwareupdate"]
                            + OSInstallerCache.fetchArguments(version: release.version))
                 if dryRun {
@@ -366,9 +370,26 @@ enum Entry {
                         print("could not start softwareupdate: \(error.localizedDescription)")
                         break
                     }
+
+                    // Watchdog. Waiting on exit alone means a wedged download
+                    // is waited on forever: it keeps the process, produces no
+                    // output, and never errors.
+                    let watchdog = Task.detached {
+                        while p.isRunning {
+                            try? await Task.sleep(nanoseconds: 30 * 1_000_000_000)
+                            guard p.isRunning else { return }
+                            if OSInstallerCache.isStalled(lastOutput: sink.lastWrite) {
+                                FileHandle.standardOutput.write(Data(
+                                    "\nno progress for \(Int(OSInstallerCache.stallTimeout / 60)) minutes — treating it as stalled\n".utf8))
+                                p.terminate()
+                                return
+                            }
+                        }
+                    }
                     p.waitUntilExit()
+                    watchdog.cancel()
                     pipe.fileHandleForReading.readabilityHandler = nil
-                    let captured = sink.text
+                    let captured = sink.text + (sink.wasStalled ? " stalled no progress" : "")
 
                     if let got = OSInstallerCache.cached(matching: release) {
                         print("\ncached: \(got.url.path) (\(got.sizeText))")
@@ -484,11 +505,43 @@ enum Entry {
                   !OSInstallerCache.isRetryable(log: "Could not find installer for version 99.9"))
             check("a clean run is not retried",
                   !OSInstallerCache.isRetryable(log: "Install finished successfully"))
+            check("a download that goes quiet is treated as stalled",
+                  OSInstallerCache.isStalled(lastOutput: Date().addingTimeInterval(-13 * 60)))
+            check("a download that just spoke is not",
+                  !OSInstallerCache.isStalled(lastOutput: Date().addingTimeInterval(-60)))
+            check("a stalled run is retried, since it produces no error text",
+                  OSInstallerCache.isRetryable(log: "Installing: 90.0% stalled no progress"))
             check("backoff grows and then caps",
                   OSInstallerCache.backoffSeconds(attempt: 1) == 30
                   && OSInstallerCache.backoffSeconds(attempt: 2) == 60
                   && OSInstallerCache.backoffSeconds(attempt: 3) == 120
                   && OSInstallerCache.backoffSeconds(attempt: 99) == 300)
+
+            // Regression, from a real run: the interface let a macOS release
+            // be selected, the engine queued softwareupdate -i, and it
+            // downloaded ~17 GB before reporting "Failed to authenticate".
+            // Every layer must refuse it independently.
+            let safari2 = SystemUpdate(label: "Safari27.0", title: "Safari", version: "27.0",
+                                       sizeKiB: 100_000, recommended: true, requiresRestart: true)
+            let kept = InstallEngine.withoutSystemReleases([tahoe, safari2], log: { _ in })
+            check("the engine drops a macOS release and keeps the rest",
+                  kept.map(\.label) == ["Safari27.0"])
+            var explained = ""
+            _ = InstallEngine.withoutSystemReleases([tahoe], log: { explained += $0 })
+            check("the engine says why, and that nothing was downloaded",
+                  explained.contains("Software Update") && explained.contains("Nothing was downloaded"))
+
+            let sysScript = ScriptGenerator.buildSystemUpdates([tahoe, safari2])
+            check("the Apple-update script never mentions the release",
+                  !sysScript.contains("macOS Tahoe 26.7-25G220"))
+            check("the Apple-update script still installs Safari",
+                  sysScript.contains("Safari27.0"))
+
+            let mixed = ScriptGenerator.build(apps: [], tweaks: [], webApps: [],
+                                              systemUpdates: [tahoe, safari2],
+                                              stagedUpdates: [tahoe])
+            check("the combined script never mentions the release either",
+                  !mixed.contains("macOS Tahoe 26.7-25G220"))
 
             print("\n\(failed == 0 ? "all nag cases passed" : "\(failed) nag cases failed")")
             exit(failed == 0 ? 0 : 1)

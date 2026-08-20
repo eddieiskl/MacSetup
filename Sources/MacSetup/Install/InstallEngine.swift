@@ -127,6 +127,14 @@ final class InstallEngine: ObservableObject {
              options: ScriptOptions = ScriptOptions()) {
         guard !isRunning else { return }
 
+        // A macOS release can never be installed by this app: softwareupdate
+        // rejects it even as root, because Apple Silicon wants a volume
+        // owner's credentials. Attempting it downloads gigabytes first and
+        // *then* fails, so it is refused here rather than anywhere later —
+        // this is the layer that stops the wasted download, whatever the
+        // interface allowed the user to select.
+        let systemUpdates = Self.withoutSystemReleases(systemUpdates, log: { appendLog($0) })
+
         items = apps.map {
             QueueItem(id: $0.id, name: $0.name, subtitle: $0.source.shortLabel)
         } + webApps.map {
@@ -260,8 +268,28 @@ final class InstallEngine: ObservableObject {
     }
 
     /// Installs Apple updates through the same queue, log and prompt as apps.
+    /// Filters out anything `softwareupdate` cannot install unattended, saying
+    /// why. Shared by both entry points so neither can drift into attempting it.
+    static func withoutSystemReleases(_ updates: [SystemUpdate],
+                                      log: (String) -> Void) -> [SystemUpdate] {
+        let refused = updates.filter(\.isSystemRelease)
+        for r in refused {
+            log("\(r.title) has to be installed from Software Update — macOS needs a volume "
+                + "owner's password for a system release, which cannot be supplied by a script. "
+                + "Nothing was downloaded.")
+        }
+        return updates.filter { !$0.isSystemRelease }
+    }
+
     func runSystemUpdates(_ updates: [SystemUpdate], options: ScriptOptions = ScriptOptions()) {
-        guard !isRunning, !updates.isEmpty else { return }
+        guard !isRunning else { return }
+        let refusedCount = updates.filter(\.isSystemRelease).count
+        let updates = Self.withoutSystemReleases(updates, log: { appendLog($0) })
+        guard !updates.isEmpty else {
+            finished = true
+            summary = (ok: 0, failed: 0, skipped: refusedCount)
+            return
+        }
         items = updates.map {
             QueueItem(id: $0.label, name: $0.title,
                       subtitle: "\($0.version) · \($0.sizeText)" + ($0.requiresRestart ? " · needs a restart" : ""))
