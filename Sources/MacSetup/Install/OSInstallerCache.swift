@@ -47,12 +47,38 @@ enum OSInstallerCache {
         return out
     }
 
-    /// A cached installer only counts if it is the release being asked for. An
-    /// installer for last year's macOS is worse than none: it would look ready
-    /// while installing the wrong thing.
+    /// The payload every real installer carries. Without it the app is a stub:
+    /// it looks like an installer, launches like one, and then tries to
+    /// download the whole release at the worst possible moment.
+    static func isComplete(_ c: Cached) -> Bool {
+        let shared = c.url.appendingPathComponent("Contents/SharedSupport")
+        let dmg = shared.appendingPathComponent("SharedSupport.dmg")
+        guard FileManager.default.fileExists(atPath: dmg.path) else { return false }
+        // A stub is tens of megabytes; the real thing is tens of gigabytes.
+        return c.sizeBytes > 8_000_000_000
+    }
+
+    /// A cached installer only counts if it is the release being asked for and
+    /// is actually complete.
+    ///
+    /// Both halves were learned the hard way. An installer for last year's
+    /// macOS would look ready while installing the wrong thing; and an
+    /// interrupted fetch leaves a ~30 MB stub in /Applications that satisfies
+    /// a version check while containing nothing at all.
     static func cached(matching update: SystemUpdate) -> Cached? {
-        cached().first { VersionCompare.compare(installed: $0.version,
-                                                latest: update.version) == .same }
+        cached().first {
+            VersionCompare.compare(installed: $0.version, latest: update.version) == .same
+            && isComplete($0)
+        }
+    }
+
+    /// A stub or half-written installer, which should be removed before
+    /// fetching again rather than left to mislead.
+    static func incomplete(matching update: SystemUpdate) -> Cached? {
+        cached().first {
+            VersionCompare.compare(installed: $0.version, latest: update.version) == .same
+            && !isComplete($0)
+        }
     }
 
     private static func directorySize(_ url: URL) -> Int64 {
@@ -123,11 +149,21 @@ enum OSInstallerCache {
     /// still alive. Retrying on exit alone means a hung download is waited on
     /// forever, which is a worse failure than an error, because nothing ever
     /// reports it.
-    static let stallTimeout: TimeInterval = 12 * 60
+    /// Deliberately long. The final phase writes an 18 GB payload to disk and
+    /// prints nothing at all while doing it, so a short timeout kills a nearly
+    /// finished download — which is exactly what happened here, at 87%.
+    static let stallTimeout: TimeInterval = 45 * 60
 
-    /// Whether a run that has produced no output since `lastOutput` is stuck.
-    static func isStalled(lastOutput: Date, now: Date = Date()) -> Bool {
-        now.timeIntervalSince(lastOutput) > stallTimeout
+    /// Whether a run is stuck.
+    ///
+    /// Output alone is the wrong signal: `softwareupdate` goes quiet for a
+    /// long time while assembling. Disk consumption is the signal that cannot
+    /// lie, so a run counts as progressing if *either* moved.
+    static func isStalled(lastOutput: Date,
+                          lastDiskChange: Date,
+                          now: Date = Date()) -> Bool {
+        let quiet = now.timeIntervalSince(max(lastOutput, lastDiskChange))
+        return quiet > stallTimeout
     }
 
     /// Another `softwareupdate` already working is a reason not to start.
@@ -180,8 +216,15 @@ final class OutputSink: @unchecked Sendable {
         return last
     }
 
-    var wasStalled: Bool {
-        OSInstallerCache.isStalled(lastOutput: lastWrite)
+    var wasStalled: Bool { stalled }
+    private var stalledFlag = false
+    var stalled: Bool {
+        lock.lock(); defer { lock.unlock() }
+        return stalledFlag
+    }
+    func markStalled() {
+        lock.lock(); defer { lock.unlock() }
+        stalledFlag = true
     }
 
     var text: String {

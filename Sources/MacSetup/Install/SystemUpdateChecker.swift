@@ -39,6 +39,15 @@ final class SystemUpdateChecker: ObservableObject {
     @Published private(set) var lastChecked: Date?
     @Published private(set) var lastError: String?
 
+    /// Whether the last check actually got an answer.
+    ///
+    /// This matters more than it looks. A check that times out leaves
+    /// `updates` empty, which is indistinguishable from "nothing pending" —
+    /// so callers silently conclude the Mac is up to date, dismiss the
+    /// full-screen reminder, and discard staged updates. Everything that acts
+    /// on an empty list must know whether the list is trustworthy.
+    @Published private(set) var lastCheckSucceeded = false
+
     var restartRequired: [SystemUpdate] { updates.filter(\.requiresRestart) }
     var safeToInstall: [SystemUpdate] { updates.filter { !$0.requiresRestart } }
 
@@ -50,10 +59,12 @@ final class SystemUpdateChecker: ObservableObject {
 
         let output = await Self.runSoftwareUpdateList()
         guard let output else {
-            lastError = "softwareupdate did not respond."
-            return
+            lastError = "softwareupdate did not answer in time — what is pending is unknown."
+            lastCheckSucceeded = false
+            return          // deliberately leaves `updates` alone rather than emptying it
         }
         updates = Self.parse(output)
+        lastCheckSucceeded = true
     }
 
     /// `softwareupdate --list` contacts Apple and can take a while, so it runs
@@ -68,7 +79,9 @@ final class SystemUpdateChecker: ObservableObject {
             p.standardError = pipe
             guard (try? p.run()) != nil else { return nil }
 
-            let deadline = Date().addingTimeInterval(150)
+            // Measured at over 150s on a healthy Mac with a slow link to
+            // Apple, which is what made a timeout look like "up to date".
+            let deadline = Date().addingTimeInterval(420)
             while p.isRunning && Date() < deadline {
                 usleep(200_000)
             }

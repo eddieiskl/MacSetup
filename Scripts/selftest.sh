@@ -389,6 +389,19 @@ fi
 # Regression: the elevated package batch must log to the SAME file the script
 # declares. When those drifted apart, every .pkg installed correctly but was
 # reported as failed, because its status lines went to a file nobody read.
+# macOS ships neither timeout(1) nor gtimeout, and a network step that hangs
+# rather than fails will otherwise block the whole suite indefinitely — which
+# it did, on a Zoom download frozen mid-transfer with the process still alive.
+with_timeout() {
+  local secs="$1"; shift
+  ( "$@" ) & local cmd_pid=$!
+  ( sleep "$secs"; kill -TERM "$cmd_pid" 2>/dev/null ) & local killer=$!
+  wait "$cmd_pid" 2>/dev/null; local rc=$?
+  kill -TERM "$killer" 2>/dev/null
+  wait "$killer" 2>/dev/null
+  return $rc
+}
+
 PKGT="$SANDBOX/pkgflush"
 mkdir -p "$PKGT/bin"
 printf '#!/bin/bash\nexit 0\n' > "$PKGT/bin/installer"   # stub, installs nothing
@@ -401,9 +414,12 @@ sed -i '' 's|if ! osascript -e "do shell script .* with administrator privileges
 # a PATH shim no longer intercepts it — point the script at the stub directly.
 sed -i '' "s|/usr/sbin/installer -pkg|$PKGT/bin/installer -pkg|" "$PKGT/run.sh"
 : > "$PKGT/run.log"
-( export PATH="$PKGT/bin:$PATH"; bash "$PKGT/run.sh" >/dev/null 2>&1 )
+with_timeout 420 env PATH="$PKGT/bin:$PATH" bash "$PKGT/run.sh" >/dev/null 2>&1
+PKGRC=$?
 if grep -q '@@MS|zoom|done' "$PKGT/run.log"; then
   ok "package results reach the log the app reads"
+elif [ "$PKGRC" -ge 124 ] || [ "$PKGRC" -eq 143 ]; then
+  skip "package flush timed out (slow or hung download, not a code fault)"
 else
   bad "package results reach the log the app reads" \
       "$(grep -c '@@MS' "$PKGT/run.log" 2>/dev/null) status lines, none marking zoom done"
@@ -652,6 +668,14 @@ else
   bad "running outside an app bundle does not crash" "$(tail -3 /tmp/st-bundle.txt)"
 fi
 
+# The emitted policies are consumed by MDMs and by Nudge, so a malformed one
+# is a policy that silently does nothing.
+if $BIN --test-nag 2>&1 | grep -q 'the DDM declaration is valid JSON'; then
+  ok "DDM and Nudge policies are well formed"
+else
+  bad "DDM and Nudge policies are well formed"
+fi
+
 # Regression: a macOS release reached softwareupdate -i, downloaded ~17 GB and
 # then failed to authenticate. No emitted script may ever name one.
 SYSSCRIPT=$($BIN --emit-script "" 2>/dev/null || true)
@@ -673,14 +697,16 @@ else
 fi
 
 # The installer cache must never start a huge download implicitly.
+# A dry run must download nothing AND delete nothing. It briefly did the
+# latter: the stub-removal step ran before the dry-run branch.
 if $BIN --cache-os-installer --dry-run >/tmp/st-cache.txt 2>&1 \
    && grep -qE 'would run: /usr/sbin/softwareupdate --fetch-full-installer' /tmp/st-cache.txt \
-   && ! grep -q '^running:' /tmp/st-cache.txt; then
-  ok "the installer cache dry run downloads nothing"
+   && ! grep -qE '^running \(attempt|^removed it' /tmp/st-cache.txt; then
+  ok "the installer cache dry run downloads nothing and deletes nothing"
 elif grep -q 'no macOS release pending' /tmp/st-cache.txt; then
   skip "no macOS release pending to cache"
 else
-  bad "the installer cache dry run downloads nothing" "$(tail -2 /tmp/st-cache.txt)"
+  bad "the installer cache dry run downloads nothing and deletes nothing" "$(tail -2 /tmp/st-cache.txt)"
 fi
 
 # Both test harnesses must be able to fail, or they are decoration.

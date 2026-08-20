@@ -69,7 +69,7 @@ struct MacSetupApp: App {
                     await checker.checkInBackground(apps: state.allApps)
                     await system.check()
                     await store.check()
-                    staged.reconcile(with: system.updates)
+                    if system.lastCheckSucceeded { staged.reconcile(with: system.updates) }
                     // Same reminder as the scheduled run, so it still appears
                     // for anyone who never turned the schedule on.
                     if let nudge = SystemUpdateNudge.pending(in: system.updates) {
@@ -160,6 +160,10 @@ struct MacSetupApp: App {
     private func considerNag() {
         let policy = NagPolicy.current
         guard policy.enabled else { return }
+        // A failed check is not evidence the update is gone. Without this
+        // the reminder disappears on a slow network — the enforcement tool
+        // failing open, silently.
+        guard system.lastCheckSucceeded else { return }
         guard let release = system.updates.first(where: \.isSystemRelease) else {
             // Installed, or no longer offered: drop any snooze so the next
             // release starts from a clean slate.
@@ -188,7 +192,10 @@ struct MacSetupApp: App {
             if !staged.staged.isEmpty || stale {
                 await system.check()
             }
-            staged.reconcile(with: system.updates)
+            // Only reconcile against an answer we actually got: a timed-out
+            // check looks like "Apple offers nothing", which would throw away
+            // every staged update.
+            if system.lastCheckSucceeded { staged.reconcile(with: system.updates) }
 
             if let nudge = SystemUpdateNudge.pending(in: system.updates) {
                 Notifier.post(title: nudge.title, body: nudge.body, id: "macsetup.osupdate")

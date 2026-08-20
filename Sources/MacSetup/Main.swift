@@ -311,6 +311,53 @@ enum Entry {
             exit(0)
         }
 
+        if let i = args.firstIndex(of: "--emit-policy") {
+            // Configuration for the tools that can actually enforce a macOS
+            // update. MacSetup cannot, and emitting this is more useful than
+            // pretending otherwise.
+            let which = (i + 1 < args.count && !args[i + 1].hasPrefix("-")) ? args[i + 1] : "both"
+            var days = 14
+            if let d = args.firstIndex(of: "--deadline-days"), d + 1 < args.count,
+               let n = Int(args[d + 1]) { days = max(0, n) }
+
+            final class Flag { var done = false }
+            let flag = Flag()
+            Task { @MainActor in
+                let sys = SystemUpdateChecker()
+                await sys.check()
+                guard sys.lastCheckSucceeded else {
+                    print("could not determine the pending release: \(sys.lastError ?? "no answer")")
+                    flag.done = true; return
+                }
+                // Fall back to the running version so a policy can still be
+                // written on a Mac that happens to be up to date today.
+                let version = sys.updates.first(where: \.isSystemRelease)?.version
+                    ?? ProcessInfo.processInfo.operatingSystemVersionString
+                        .replacingOccurrences(of: "Version ", with: "")
+                        .components(separatedBy: " ").first ?? "26.7"
+                let deadline = Calendar.current.date(byAdding: .day, value: days, to: Date()) ?? Date()
+
+                if which == "ddm" || which == "both" {
+                    print("// DDM — push via MDM as a declaration.")
+                    print("// macOS enforces this itself; no password needed, because the")
+                    print("// bootstrap token escrowed at enrolment supplies the authority.")
+                    print(PolicyExport.ddmDeclaration(version: version, deadline: deadline))
+                }
+                if which == "both" { print("") }
+                if which == "nudge" || which == "both" {
+                    print("// Nudge — com.github.macadmins.Nudge, for Macs with no MDM.")
+                    print("// Deliver as a config profile, a plist on disk, or a JSON URL.")
+                    print("// Nudge only prompts: it cannot install a macOS release either.")
+                    print(PolicyExport.nudgeConfiguration(version: version, deadline: deadline))
+                }
+                flag.done = true
+            }
+            while !flag.done {
+                _ = RunLoop.main.run(mode: .default, before: Date().addingTimeInterval(0.05))
+            }
+            exit(0)
+        }
+
         if args.contains("--cache-os-installer") {
             // Downloads the macOS installer ahead of time. This is a large,
             // slow download, so it reports what it is about to do, refuses
@@ -321,6 +368,11 @@ enum Entry {
             Task { @MainActor in
                 let sys = SystemUpdateChecker()
                 await sys.check()
+                guard sys.lastCheckSucceeded else {
+                    print("could not determine what is pending: \(sys.lastError ?? "no answer")")
+                    print("not caching anything — this is not the same as being up to date")
+                    flag.done = true; return
+                }
                 guard let release = sys.updates.first(where: \.isSystemRelease) else {
                     print("no macOS release pending — nothing to cache")
                     flag.done = true; return
@@ -328,6 +380,30 @@ enum Entry {
                 if let already = OSInstallerCache.cached(matching: release) {
                     print("already cached: \(already.url.path) (\(already.sizeText))")
                     flag.done = true; return
+                }
+                // An interrupted fetch leaves a stub that satisfies a version
+                // check but contains no payload. Remove it, or softwareupdate
+                // sees an installer already in place and declines to refetch.
+                if let stub = OSInstallerCache.incomplete(matching: release) {
+                    print("an incomplete installer is in the way: \(stub.url.path) (\(stub.sizeText))")
+                    // A dry run must not change anything — say what would
+                    // happen and carry on reporting.
+                    if dryRun {
+                        print("would remove it before fetching")
+                    } else {
+                    // softwareupdate writes it as root, so a normal user
+                    // cannot delete it. Saying so beats `try?` silently
+                    // failing and leaving the next fetch to be refused.
+                    do {
+                        try FileManager.default.removeItem(at: stub.url)
+                        print("removed it")
+                    } catch {
+                        print("could not remove it: \(error.localizedDescription)")
+                        print("it is owned by root — remove it yourself, then run this again:")
+                        print("    sudo rm -rf \"\(stub.url.path)\"")
+                        flag.done = true; return
+                    }
+                    }
                 }
                 let free = ByteCountFormatter.string(fromByteCount: OSInstallerCache.freeBytes(),
                                                      countStyle: .file)
@@ -375,12 +451,25 @@ enum Entry {
                     // is waited on forever: it keeps the process, produces no
                     // output, and never errors.
                     let watchdog = Task.detached {
+                        // Disk is the signal that cannot lie. The final phase
+                        // writes an 18 GB payload while printing nothing, so
+                        // watching stdout alone killed a download at 87%.
+                        var lastFree = OSInstallerCache.freeBytes()
+                        var lastDiskChange = Date()
                         while p.isRunning {
-                            try? await Task.sleep(nanoseconds: 30 * 1_000_000_000)
+                            try? await Task.sleep(nanoseconds: 60 * 1_000_000_000)
                             guard p.isRunning else { return }
-                            if OSInstallerCache.isStalled(lastOutput: sink.lastWrite) {
+                            let free = OSInstallerCache.freeBytes()
+                            // 20 MB of movement in a minute counts as alive.
+                            if abs(free - lastFree) > 20_000_000 {
+                                lastFree = free
+                                lastDiskChange = Date()
+                            }
+                            if OSInstallerCache.isStalled(lastOutput: sink.lastWrite,
+                                                          lastDiskChange: lastDiskChange) {
                                 FileHandle.standardOutput.write(Data(
-                                    "\nno progress for \(Int(OSInstallerCache.stallTimeout / 60)) minutes — treating it as stalled\n".utf8))
+                                    "\nno output and no disk activity for \(Int(OSInstallerCache.stallTimeout / 60)) minutes — treating it as stalled\n".utf8))
+                                sink.markStalled()
                                 p.terminate()
                                 return
                             }
@@ -394,6 +483,15 @@ enum Entry {
                     if let got = OSInstallerCache.cached(matching: release) {
                         print("\ncached: \(got.url.path) (\(got.sizeText))")
                         break
+                    }
+                    // Report a stub as the failure it is, rather than letting
+                    // the next line call it "no installer" and move on.
+                    if let stub = OSInstallerCache.incomplete(matching: release) {
+                        print("\nonly a stub was produced (\(stub.sizeText), no SharedSupport payload)")
+                        if (try? FileManager.default.removeItem(at: stub.url)) == nil {
+                            print("could not discard it — run: sudo rm -rf \"\(stub.url.path)\"")
+                            break
+                        }
                     }
                     print("\nattempt \(attempt) finished with no installer (exit \(p.terminationStatus))")
                     guard attempt < maxAttempts,
@@ -483,6 +581,21 @@ enum Entry {
             check("free space is actually readable", OSInstallerCache.freeBytes() > 0)
             // Nothing is cached on this machine, so matching must say so
             // rather than volunteering an unrelated installer.
+            // Regression, from a real run: an interrupted fetch left a 29 MB
+            // "Install macOS Tahoe.app" with an empty SharedSupport folder.
+            // The version matched, so it was reported as cached — and the
+            // update screen would have offered to start it.
+            let stub = OSInstallerCache.Cached(
+                url: URL(fileURLWithPath: "/tmp/nonexistent/Install macOS Tahoe.app"),
+                version: "26.7", sizeBytes: 30_500_000)
+            check("a stub with no payload is not a complete installer",
+                  !OSInstallerCache.isComplete(stub))
+            let bigButEmpty = OSInstallerCache.Cached(
+                url: URL(fileURLWithPath: "/tmp/nonexistent/Install macOS Tahoe.app"),
+                version: "26.7", sizeBytes: 20_000_000_000)
+            check("size alone is not enough — the payload must exist",
+                  !OSInstallerCache.isComplete(bigButEmpty))
+
             check("no cached installer is claimed when none matches",
                   OSInstallerCache.cached().isEmpty
                   ? OSInstallerCache.cached(matching: tahoe) == nil
@@ -505,10 +618,18 @@ enum Entry {
                   !OSInstallerCache.isRetryable(log: "Could not find installer for version 99.9"))
             check("a clean run is not retried",
                   !OSInstallerCache.isRetryable(log: "Install finished successfully"))
-            check("a download that goes quiet is treated as stalled",
-                  OSInstallerCache.isStalled(lastOutput: Date().addingTimeInterval(-13 * 60)))
-            check("a download that just spoke is not",
-                  !OSInstallerCache.isStalled(lastOutput: Date().addingTimeInterval(-60)))
+            let old = Date().addingTimeInterval(-50 * 60)
+            let recent = Date().addingTimeInterval(-60)
+            check("silent and no disk activity for long enough is stalled",
+                  OSInstallerCache.isStalled(lastOutput: old, lastDiskChange: old))
+            // Regression: the watchdog killed a download at 87% because the
+            // final phase writes gigabytes while printing nothing at all.
+            check("quiet but still writing to disk is NOT stalled",
+                  !OSInstallerCache.isStalled(lastOutput: old, lastDiskChange: recent))
+            check("talking but not writing is not stalled either",
+                  !OSInstallerCache.isStalled(lastOutput: recent, lastDiskChange: old))
+            check("the stall timeout allows for a long assembly phase",
+                  OSInstallerCache.stallTimeout >= 30 * 60)
             check("a stalled run is retried, since it produces no error text",
                   OSInstallerCache.isRetryable(log: "Installing: 90.0% stalled no progress"))
             check("backoff grows and then caps",
@@ -542,6 +663,60 @@ enum Entry {
                                               stagedUpdates: [tahoe])
             check("the combined script never mentions the release either",
                   !mixed.contains("macOS Tahoe 26.7-25G220"))
+
+            // Regression: `softwareupdate --list` took longer than the check's
+            // ceiling on this machine, so it returned nothing — and every
+            // caller read "nothing" as "up to date". The reminder vanished and
+            // staged updates would have been discarded.
+            let checker = MainActor.assumeIsolated { SystemUpdateChecker() }
+            check("a checker that has not run is not treated as authoritative",
+                  !MainActor.assumeIsolated { checker.lastCheckSucceeded })
+            let src2 = (try? String(contentsOfFile: "Sources/MacSetup/MacSetupApp.swift",
+                                    encoding: .utf8)) ?? ""
+            if !src2.isEmpty {
+                check("staged updates are only reconciled against a successful check",
+                      !src2.contains("\n                    staged.reconcile(with: system.updates)")
+                      && src2.contains("if system.lastCheckSucceeded { staged.reconcile"))
+                check("the full-screen screen does not dismiss on a failed check",
+                      src2.contains("guard system.lastCheckSucceeded else { return }"))
+            }
+            let src3 = (try? String(contentsOfFile: "Sources/MacSetup/Install/SystemUpdateChecker.swift",
+                                    encoding: .utf8)) ?? ""
+            if !src3.isEmpty {
+                check("a failed check leaves the previous list alone rather than emptying it",
+                      src3.contains("lastCheckSucceeded = false")
+                      && src3.contains("// deliberately leaves `updates` alone"))
+                check("the check allows for a slow softwareupdate",
+                      src3.contains("addingTimeInterval(420)"))
+            }
+
+            // The emitted policies are consumed by other systems, so their
+            // shape has to be right — a typo here is a policy that silently
+            // does nothing.
+            let dl = Date().addingTimeInterval(14 * 86400)
+            let ddm = PolicyExport.ddmDeclaration(version: "26.7", deadline: dl, identifier: "TEST-ID")
+            check("the DDM declaration names the enforcement type",
+                  ddm.contains("com.apple.configuration.softwareupdate.enforcement.specific"))
+            check("the DDM declaration carries a target version and deadline",
+                  ddm.contains("\"TargetOSVersion\" : \"26.7\"") && ddm.contains("TargetLocalDateTime"))
+            check("the DDM deadline has no timezone suffix, being local time",
+                  !ddm.contains("TargetLocalDateTime\" : \"") || !ddm.contains("+0000\""))
+            check("the DDM declaration is valid JSON",
+                  (try? JSONSerialization.jsonObject(
+                      with: Data(ddm.utf8))) != nil)
+
+            let nudge = PolicyExport.nudgeConfiguration(version: "26.7", deadline: dl)
+            check("the Nudge config is valid JSON",
+                  (try? JSONSerialization.jsonObject(with: Data(nudge.utf8))) != nil)
+            check("the Nudge config states the required version",
+                  nudge.contains("\"requiredMinimumOSVersion\" : \"26.7\""))
+            check("the Nudge config sets an installation date",
+                  nudge.contains("requiredInstallationDate"))
+            if let obj = try? JSONSerialization.jsonObject(with: Data(nudge.utf8)) as? [String: Any],
+               let ux = obj["userExperience"] as? [String: Any] {
+                check("Nudge still allows deferrals rather than trapping anyone",
+                      (ux["allowedDeferrals"] as? Int ?? 0) > 0)
+            }
 
             print("\n\(failed == 0 ? "all nag cases passed" : "\(failed) nag cases failed")")
             exit(failed == 0 ? 0 : 1)
