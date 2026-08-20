@@ -613,6 +613,26 @@ else
   bad "version comparator" "$(grep FAIL /tmp/st-ver.txt | head -3)"
 fi
 
+# The unlock rules decide whether a password dialog lands in someone's face,
+# and whether a 17 GB macOS release gets started unattended. Pinned, not eyeballed.
+if $BIN --test-unlock > /tmp/st-unlock.txt 2>&1; then
+  ok "unlock rules ($(grep -c '^  ok' /tmp/st-unlock.txt) cases)"
+else
+  bad "unlock rules" "$(grep FAIL /tmp/st-unlock.txt | head -3)"
+fi
+
+# The pane MacSetup opens for a macOS release must actually exist, or the
+# "open Software Update" option silently does nothing.
+SU_EXT=/System/Library/ExtensionKit/Extensions/SoftwareUpdateSettingsExtension.appex/Contents/Info.plist
+if [ -f "$SU_EXT" ] && \
+   [ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$SU_EXT" 2>/dev/null)" \
+     = "com.apple.Software-Update-Settings.extension" ] && \
+   grep -q 'com.apple.Software-Update-Settings.extension' Sources/MacSetup/Models/UnlockAction.swift; then
+  ok "the Software Update pane MacSetup opens exists on this macOS"
+else
+  bad "the Software Update pane MacSetup opens exists on this macOS"
+fi
+
 $BIN --check-updates > /tmp/st-upd.txt 2>&1
 if grep -qE 'installed - [0-9]+ update' /tmp/st-upd.txt; then
   ok "update check runs ($(grep -oE '[0-9]+ installed' /tmp/st-upd.txt | head -1))"
@@ -691,6 +711,20 @@ if grep -q 'downloaded.contains(\$0.label)' Sources/MacSetup/Main.swift; then
   ok "only confirmed downloads are staged for the unlock prompt"
 else
   bad "only confirmed downloads are staged for the unlock prompt"
+fi
+
+# A full macOS release cannot be staged or installed unattended: on Apple
+# Silicon it needs a volume owner's password, which root does not satisfy and
+# which this tool will not handle. Starting a 17 GB download that is certain to
+# fail authentication is worse than not starting it.
+SRBAD=""
+grep -q 'isSystemRelease' Sources/MacSetup/Install/SystemUpdateChecker.swift || SRBAD="$SRBAD no-flag"
+grep -q '!\$0.isSystemRelease' Sources/MacSetup/Main.swift || SRBAD="$SRBAD still-stages-releases"
+grep -q 'volume owner password' Sources/MacSetup/Install/ScriptPrelude.swift || SRBAD="$SRBAD no-explanation"
+if [ -z "$SRBAD" ]; then
+  ok "macOS releases are not downloaded unattended, and the reason is reported"
+else
+  bad "macOS releases are not downloaded unattended" "$SRBAD"
 fi
 
 # Restart-required updates are staged overnight and offered at the next unlock,
@@ -808,7 +842,7 @@ fi
 
 if [ "$OFFLINE" = "0" ]; then
   if $BIN --auto-update --dry-run > /tmp/st-auto.txt 2>&1 \
-     && grep -qE '[0-9]+ update\(s\); [0-9]+ installable now' /tmp/st-auto.txt; then
+     && grep -qE '[0-9]+ app update\(s\); [0-9]+ installable now' /tmp/st-auto.txt; then
     ok "auto-update dry run reports what it would do"
   else
     bad "auto-update dry run reports what it would do" "$(tail -2 /tmp/st-auto.txt)"

@@ -317,6 +317,8 @@ msu_flush_pkgs() {
     echo '    printf "@@MS|%s|downloading|-1|staging the update\\n" "$id" >> "$LOG"'
     echo '    if /usr/sbin/softwareupdate -d "$path" >>"$LOG" 2>&1; then'
     echo '      printf "@@MS|%s|done|Downloaded, ready to install\\n" "$id" >> "$LOG"'
+    echo '    elif grep -q "Failed to authenticate" "$LOG" 2>/dev/null; then'
+    echo '      printf "@@MS|%s|failed|macOS system updates need a volume owner password, which cannot be supplied unattended — install it from System Settings\\n" "$id" >> "$LOG"'
     echo '    else'
     echo '      printf "@@MS|%s|failed|Could not download the update\\n" "$id" >> "$LOG"'
     echo '    fi'

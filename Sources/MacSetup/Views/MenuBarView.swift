@@ -11,6 +11,7 @@ struct MenuBarView: View {
     @EnvironmentObject var checker: UpdateChecker
     @EnvironmentObject var engine: InstallEngine
     @EnvironmentObject var schedule: UpdateSchedule
+    @EnvironmentObject var staged: PendingRestartStore
     var openMain: () -> Void
 
     var body: some View {
@@ -45,6 +46,17 @@ struct MenuBarView: View {
                 openMain()
             }
             .disabled(engine.isRunning)
+        }
+
+        // Anything downloaded overnight is waiting on the user, so say so here
+        // rather than only in a notification they may have missed.
+        if !staged.staged.isEmpty {
+            Divider()
+            Text(staged.staged.count == 1
+                 ? "Waiting for a restart: \(staged.staged[0].title)"
+                 : "\(staged.staged.count) updates waiting for a restart")
+            Button("Install and Restart…") { openMain() }
+                .disabled(engine.isRunning)
         }
 
         Divider()

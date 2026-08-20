@@ -416,6 +416,40 @@ attributed to MacSetup and can be clicked. A launchd job runs the binary outside
 an app context where that framework refuses to register, so there is an
 AppleScript fallback for that case.
 
+### When you come back to the Mac
+
+An update that needs a restart is downloaded overnight but never installed while
+nobody is watching. It waits for the next unlock, which is a moment you chose to
+be present. What happens then is a setting on the Updates pane:
+
+| Option | Behaviour |
+| --- | --- |
+| **Just notify me** | A notification, nothing more. The default. |
+| **Install what it can** | MacSetup installs the updates it staged, showing macOS's authorisation dialog once. |
+| **Install, and open Software Update for macOS** | As above, and if a macOS release is waiting, System Settings is opened at Software Update. |
+
+That third option exists because of a hard limit, not a preference. **MacSetup
+cannot install a macOS release, and neither can any script.** On Apple Silicon
+`softwareupdate` demands a *volume owner's* credentials, and refuses even when
+already running as root:
+
+```
+Downloaded: macOS Tahoe 26.7
+Password: … Failed to authenticate
+```
+
+Supplying that would mean handling your password in plaintext through
+`--stdinpass`, which MacSetup does not do. So for a macOS release the honest
+maximum is to put you in front of Software Update and let **macOS** ask for the
+password itself, through its own secure prompt. Those updates are marked
+`needs you` in the list, and are never downloaded unattended — otherwise the
+schedule would start a multi-gigabyte download every night that could never
+finish.
+
+Unlock prompts are throttled to once every six hours for the same set of
+updates, so locking and unlocking through the day does not turn into a nag. If
+something new arrives, it prompts again straight away.
+
 To inspect or remove the agent by hand:
 
 ```bash
@@ -541,5 +575,9 @@ asset **filename**, not the full URL.
   unrelated budgeting app, and there is no unattended installer for the real one.
 - **VMware Fusion was dropped** — Broadcom now requires a login, and the
   Homebrew cask no longer exists, so it can't be installed unattended.
+- **macOS releases cannot be installed by MacSetup.** Apple Silicon requires a
+  volume owner's password, which `softwareupdate` will not accept from root or
+  from a script. MacSetup opens Software Update instead. Safari and Command Line
+  Tools are unaffected — those it installs itself.
 - **The app is ad-hoc signed.** For fleet distribution, re-sign with your
   Developer ID and notarise (see the commented command in `build-app.sh`).

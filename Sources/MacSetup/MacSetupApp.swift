@@ -70,19 +70,7 @@ struct MacSetupApp: App {
 
                     // Offer any staged restart-update when the user comes back,
                     // rather than interrupting them now or rebooting overnight.
-                    unlock.onUnlock = {
-                        Task { @MainActor in
-                            staged.load()
-                            guard !staged.staged.isEmpty else { return }
-                            let names = staged.staged.map(\.title).joined(separator: ", ")
-                            Notifier.post(
-                                title: staged.staged.count == 1
-                                    ? "\(staged.staged[0].title) is ready to install"
-                                    : "\(staged.staged.count) updates are ready to install",
-                                body: "\(names) — downloaded and waiting. Installing will restart your Mac.",
-                                id: "macsetup.staged")
-                        }
-                    }
+                    unlock.onUnlock = { handleUnlock() }
                     unlock.start()
                 }
         }
@@ -129,6 +117,62 @@ struct MacSetupApp: App {
     }
 
     /// Bring the main window back, restoring the Dock icon if it was dropped.
+    /// Runs when the user comes back to the Mac.
+    ///
+    /// Two different things can be waiting, and they need opposite handling.
+    /// Updates MacSetup staged overnight are installed here, which raises the
+    /// usual authorisation dialog — the user types their password once, at a
+    /// moment they chose to be present. A macOS release cannot be installed
+    /// that way at all: `softwareupdate` rejects it even running as root,
+    /// because Apple Silicon wants a volume owner's credentials. For that one,
+    /// the most MacSetup can honestly do is open Software Update and let macOS
+    /// ask for the password itself.
+    private func handleUnlock() {
+        Task { @MainActor in
+            staged.load()
+
+            // Unlock and wake fire many times a day. `softwareupdate --list`
+            // is a network round-trip, so it is only worth re-running when
+            // something is actually staged or the last answer has gone stale —
+            // otherwise every unlock would cost a request and some battery.
+            let stale = system.lastChecked.map { Date().timeIntervalSince($0) > 6 * 3600 } ?? true
+            if !staged.staged.isEmpty || stale {
+                await system.check()
+            }
+            staged.reconcile(with: system.updates)
+
+            let plan = UnlockPlan.make(staged: staged.staged, available: system.updates)
+            guard !plan.isEmpty else { return }
+            guard UnlockThrottle.shouldAct(subject: plan.subject) else { return }
+            UnlockThrottle.record(subject: plan.subject)
+
+            Notifier.post(title: plan.notificationTitle,
+                          body: plan.notificationBody,
+                          id: "macsetup.staged")
+
+            let action = UnlockAction.current
+            guard action.installsAutomatically else { return }
+
+            // Give the unlock animation a moment to finish, so the password
+            // dialog does not land on a screen still fading in.
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+
+            if !plan.installable.isEmpty && !engine.isRunning {
+                showMainWindow()
+                engine.runSystemUpdates(plan.installable)
+                // Wait for it, so Software Update does not steal the window
+                // out from under a running install.
+                while engine.isRunning {
+                    try? await Task.sleep(nanoseconds: 500_000_000)
+                }
+            }
+
+            if action.opensSoftwareUpdate && !plan.releases.isEmpty {
+                UnlockThrottle.openSoftwareUpdate()
+            }
+        }
+    }
+
     private func showMainWindow() {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate()
@@ -139,7 +183,7 @@ struct MacSetupApp: App {
         } else {
             // No window left (it was closed): ask AppKit to reopen the default
             // one, which SwiftUI recreates from the WindowGroup.
-            NSApp.sendAction(Selector(("newWindowForTab:")), to: nil, from: nil)
+            NSApp.sendAction(NSSelectorFromString("newWindowForTab:"), to: nil, from: nil)
             if NSApp.windows.isEmpty {
                 NSWorkspace.shared.open(Bundle.main.bundleURL)
             }

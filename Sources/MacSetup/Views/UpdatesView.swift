@@ -8,6 +8,26 @@ struct UpdatesView: View {
     @EnvironmentObject var system: SystemUpdateChecker
     @EnvironmentObject var store: AppStoreChecker
     @EnvironmentObject var staged: PendingRestartStore
+    @AppStorage("unlockAction") private var unlockAction = UnlockAction.notify.rawValue
+
+    /// Spelled out because the three options behave very differently, and the
+    /// macOS-release caveat is not something anyone would guess.
+    private var unlockExplanation: String {
+        switch UnlockAction(rawValue: unlockAction) ?? .notify {
+        case .notify:
+            return "Anything downloaded overnight waits until you choose to install it."
+        case .install:
+            return "Updates MacSetup staged overnight are installed as soon as you come back, "
+                 + "asking for your password once. A full macOS release is only mentioned — "
+                 + "it cannot be installed this way."
+        case .installAndOpenSettings:
+            return "As above, and if a macOS release is waiting, Software Update is opened so "
+                 + "macOS can ask for your password itself. That is the only way a macOS "
+                 + "release can be installed: softwareupdate refuses it even as root, because "
+                 + "Apple Silicon requires a volume owner's credentials."
+        }
+    }
+
     @State private var selected: Set<String> = []
     @State private var showOthers = false
     @State private var showQueue = false
@@ -143,6 +163,22 @@ struct UpdatesView: View {
                 }
                 .padding(.top, 2)
             }
+
+            Divider().padding(.vertical, 2)
+
+            HStack(spacing: 10) {
+                Text("When you next unlock this Mac")
+                    .font(.system(size: 12))
+                Picker("", selection: $unlockAction) {
+                    ForEach(UnlockAction.allCases) { Text($0.label).tag($0.rawValue) }
+                }
+                .labelsHidden().pickerStyle(.menu).fixedSize()
+                Spacer()
+            }
+
+            Text(unlockExplanation)
+                .font(.system(size: 11)).foregroundStyle(.tertiary)
+                .fixedSize(horizontal: false, vertical: true)
 
             if let err = schedule.lastError {
                 Text(err).font(.system(size: 11)).foregroundStyle(.red)
@@ -336,6 +372,22 @@ struct UpdatesView: View {
                                         .font(.system(size: 10.5)).foregroundStyle(.secondary)
                                 }
                                 Spacer()
+                                if u.isSystemRelease {
+                                    // Not a dead end: MacSetup cannot install
+                                    // this, but it can hand the user straight
+                                    // to the one thing that can.
+                                    Button {
+                                        UnlockThrottle.openSoftwareUpdate()
+                                    } label: {
+                                        Text("needs you")
+                                            .font(.system(size: 9.5, weight: .medium))
+                                            .padding(.horizontal, 6).padding(.vertical, 2)
+                                            .background(Color.secondary.opacity(0.16), in: Capsule())
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .help("A macOS release needs a volume owner password, so only Software Update can install it. Click to open it.")
+                                }
                                 if u.requiresRestart {
                                     Text("restart")
                                         .font(.system(size: 9.5, weight: .medium))

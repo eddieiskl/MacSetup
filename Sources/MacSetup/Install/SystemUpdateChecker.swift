@@ -11,6 +11,14 @@ struct SystemUpdate: Identifiable, Hashable {
 
     var id: String { label }
 
+    /// A full macOS release, as opposed to Safari or Command Line Tools. These
+    /// need a volume owner's credentials on Apple Silicon, so they cannot be
+    /// installed or even staged without a person present.
+    var isSystemRelease: Bool {
+        let t = title.lowercased()
+        return t.hasPrefix("macos") || label.lowercased().hasPrefix("macos")
+    }
+
     var sizeText: String {
         let mb = Double(sizeKiB) / 1024
         if mb >= 1024 { return String(format: "%.1f GB", mb / 1024) }

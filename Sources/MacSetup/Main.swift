@@ -216,6 +216,76 @@ enum Entry {
             exit(failed == 0 ? 0 : 1)
         }
 
+        if args.contains("--test-unlock") {
+            // The unlock rules decide whether a password dialog appears in
+            // someone's face, so they are pinned rather than eyeballed.
+            func u(_ label: String, _ title: String, restart: Bool = true) -> SystemUpdate {
+                SystemUpdate(label: label, title: title, version: "1.0", sizeKiB: 1024,
+                             recommended: true, requiresRestart: restart)
+            }
+            func staged(_ labels: [String]) -> [StagedUpdate] {
+                labels.map { StagedUpdate(label: $0, title: $0, version: "1.0", stagedAt: Date()) }
+            }
+
+            let safari = u("Safari27.0", "Safari")
+            let clt = u("CLTools", "Command Line Tools", restart: false)
+            let tahoe = u("macOS Tahoe 26.7-25G220", "macOS Tahoe 26.7")
+
+            // Seeded from the arguments rather than a literal, so the
+            // optimiser cannot fold these assertions away — and so the harness
+            // itself can be proven to report a failure when one occurs.
+            var failed = args.contains("--force-fail") ? 1 : 0
+            func check(_ label: String, _ ok: Bool) {
+                if !ok { failed += 1 }
+                print("  \(ok ? "ok  " : "FAIL") \(label)")
+            }
+
+            let both = MainActor.assumeIsolated {
+                UnlockPlan.make(staged: staged(["Safari27.0"]), available: [safari, tahoe])
+            }
+            check("a staged non-release update is installable",
+                  both.installable.map(\.label) == ["Safari27.0"])
+            check("a macOS release is never installable, only reported",
+                  both.releases.map(\.label) == [tahoe.label])
+
+            let phantom = MainActor.assumeIsolated {
+                UnlockPlan.make(staged: staged(["Safari26.0"]), available: [safari])
+            }
+            check("a staged update Apple no longer offers is dropped", phantom.isEmpty)
+
+            let unstaged = MainActor.assumeIsolated {
+                UnlockPlan.make(staged: [], available: [clt])
+            }
+            check("an available but unstaged update is not installed at unlock", unstaged.isEmpty)
+
+            let releaseOnly = MainActor.assumeIsolated {
+                UnlockPlan.make(staged: [], available: [tahoe])
+            }
+            check("a macOS release alone still prompts", !releaseOnly.isEmpty)
+            check("the macOS release explains it needs Software Update",
+                  releaseOnly.notificationBody.contains("Software Update"))
+            check("the macOS release is not queued for installation",
+                  releaseOnly.installable.isEmpty)
+
+            check("only the settings-opening option opens Software Update",
+                  UnlockAction.installAndOpenSettings.opensSoftwareUpdate
+                  && !UnlockAction.install.opensSoftwareUpdate
+                  && !UnlockAction.notify.opensSoftwareUpdate)
+            check("notify never installs anything",
+                  !UnlockAction.notify.installsAutomatically
+                  && UnlockAction.install.installsAutomatically)
+
+            check("the subject changes when a different update arrives",
+                  both.subject != releaseOnly.subject)
+            check("the subject is stable for the same set",
+                  both.subject == MainActor.assumeIsolated {
+                      UnlockPlan.make(staged: staged(["Safari27.0"]), available: [tahoe, safari]).subject
+                  })
+
+            print("\n\(failed == 0 ? "all unlock cases passed" : "\(failed) unlock cases failed")")
+            exit(failed == 0 ? 0 : 1)
+        }
+
         if args.contains("--auto-update") {
             let dryRun = args.contains("--dry-run")
             // With --allow-prompt the scheduled run may raise the standard macOS
@@ -291,7 +361,14 @@ enum Entry {
                     let appleToInstall = allowPrompt ? sys.updates.filter { !$0.requiresRestart } : []
                     // Restart-required updates are downloaded but not installed:
                     // the bytes land overnight, the reboot waits for a human.
-                    let appleToStage = allowPrompt ? sys.updates.filter(\.requiresRestart) : []
+                    let appleToStage = allowPrompt
+                        ? sys.updates.filter { $0.requiresRestart && !$0.isSystemRelease }
+                        : []
+                    let cannotStage = sys.updates.filter { $0.requiresRestart && $0.isSystemRelease }
+                    for u in cannotStage {
+                        print("  \(u.title): a macOS release needs a volume owner password — "
+                              + "install it from System Settings")
+                    }
                     let script = ScriptGenerator.build(apps: eligible, tweaks: [],
                                                        systemUpdates: appleToInstall,
                                                        stagedUpdates: appleToStage,
