@@ -403,6 +403,27 @@ msu_github_asset() {
     if [ -n "$url" ]; then printf '%s' "$url"; return 0; fi
   fi
 
+  # "Latest" is not always a Mac release. Obsidian, for one, publishes Android
+  # builds to the same repository, so the newest tag can contain only an .apk.
+  # Walk back through recent releases for the first that actually has a
+  # matching asset, rather than giving up on the newest one.
+  local recent
+  recent=$(curl -fsSL -A "$MSU_UA" --connect-timeout 20 \
+           "https://github.com/$repo/releases" 2>/dev/null \
+           | grep -oE "/$repo/releases/tag/[^\"]+" \
+           | sed 's|.*/tag/||' | awk '!seen[$0]++' | head -8)
+  for t in $recent; do
+    [ "$t" = "$tag" ] && continue          # already tried
+    url=$(curl -fsSL -A "$MSU_UA" --connect-timeout 20 \
+          "https://github.com/$repo/releases/expanded_assets/$t" 2>/dev/null \
+          | grep -oE 'href="[^"]*/releases/download/[^"]*"' \
+          | sed 's|href="|https://github.com|; s|"$||' \
+          | while IFS= read -r u; do
+              printf '%s' "${u##*/}" | grep -qE "$pattern" && printf '%s\n' "$u"
+            done | head -1)
+    if [ -n "$url" ]; then printf '%s' "$url"; return 0; fi
+  done
+
   # Fall back to the API only if the unmetered path did not work.
   json=$(curl -sSL --connect-timeout 20 -H 'Accept: application/vnd.github+json' \
          -A "$MSU_UA" "https://api.github.com/repos/$repo/releases/latest" 2>/dev/null)

@@ -101,6 +101,23 @@ while IFS=$'\t' read -r id kind meta value; do
       fi
       hit=$(printf '%s\n' "$assets" \
             | while IFS= read -r u; do printf '%s' "${u##*/}" | grep -qE "$value" && printf '%s\n' "$u"; done | head -1)
+      # "Latest" is not always a Mac release — Obsidian ships Android builds to
+      # the same repo — so mirror the installer's walk-back through recent tags
+      # rather than reporting a break the installer would not actually hit.
+      if [ -z "$hit" ]; then
+        for t in $(curl -fsSL -A 'MacSetup/1.0' --connect-timeout 20 \
+                   "https://github.com/$meta/releases" 2>/dev/null \
+                   | grep -oE "/$meta/releases/tag/[^\"]+" | sed 's|.*/tag/||' \
+                   | awk '!seen[$0]++' | head -8); do
+          [ "$t" = "$tag" ] && continue
+          hit=$(curl -fsSL -A 'MacSetup/1.0' --connect-timeout 20 \
+                "https://github.com/$meta/releases/expanded_assets/$t" 2>/dev/null \
+                | grep -oE 'href="[^"]*/releases/download/[^"]*"' \
+                | sed 's|href="|https://github.com|; s|"$||' \
+                | while IFS= read -r u; do printf '%s' "${u##*/}" | grep -qE "$value" && printf '%s\n' "$u"; done | head -1)
+          [ -n "$hit" ] && break
+        done
+      fi
       if [ -n "$hit" ]; then
         printf '%s\tgithub\tOK\t%s\n' "$id" "${hit##*/}"; pass=$((pass+1))
       else

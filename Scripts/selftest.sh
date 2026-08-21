@@ -700,7 +700,7 @@ fi
 # A dry run must download nothing AND delete nothing. It briefly did the
 # latter: the stub-removal step ran before the dry-run branch.
 if $BIN --cache-os-installer --dry-run >/tmp/st-cache.txt 2>&1 \
-   && grep -qE 'would run: /usr/sbin/softwareupdate --fetch-full-installer' /tmp/st-cache.txt \
+   && grep -qE 'would run: /usr/sbin/softwareupdate --fetch-full-installer|already cached:' /tmp/st-cache.txt \
    && ! grep -qE '^running \(attempt|^removed it' /tmp/st-cache.txt; then
   ok "the installer cache dry run downloads nothing and deletes nothing"
 elif grep -q 'no macOS release pending' /tmp/st-cache.txt; then

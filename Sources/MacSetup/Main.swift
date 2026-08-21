@@ -263,9 +263,18 @@ enum Entry {
                                            requiresRestart: true)
                 let dir = URL(fileURLWithPath: outDir)
                 try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-                for (name, days, past, snooze) in [("nag-week", 7, false, 60),
-                                                   ("nag-overdue", 21, true, 10)] {
-                    let view = NagView(update: release, days: days, snoozeMinutes: snooze,
+                // Render the cached variant too, using whatever is actually on
+                // disk. Until an installer existed this branch could not be
+                // drawn at all, so it had never been looked at.
+                let ready = OSInstallerCache.cached(matching: release)
+                for (name, days, past, snooze, useCache) in
+                        [("nag-week", 7, false, 60, false),
+                         ("nag-overdue", 21, true, 10, false),
+                         ("nag-cached", 21, true, 10, true)] {
+                    if useCache && ready == nil { continue }
+                    let view = NagView(update: release, days: days,
+                                       cached: useCache ? ready : nil,
+                                       snoozeMinutes: snooze,
                                        pastDeadline: past, onUpdate: {}, onSnooze: { _ in })
                         .frame(width: 1280, height: 800)
                     let r = ImageRenderer(content: view)
@@ -595,6 +604,34 @@ enum Entry {
                 version: "26.7", sizeBytes: 20_000_000_000)
             check("size alone is not enough — the payload must exist",
                   !OSInstallerCache.isComplete(bigButEmpty))
+
+            // Only possible once a genuine 18 GB installer exists on disk.
+            // Every earlier assertion about completeness used a synthetic
+            // stub, so the "true" branch had never actually been exercised.
+            let real = OSInstallerCache.cached().filter { OSInstallerCache.isComplete($0) }
+            if let r = real.first {
+                check("a genuine installer is recognised as complete",
+                      OSInstallerCache.isComplete(r))
+                check("a genuine installer carries its payload",
+                      FileManager.default.fileExists(
+                        atPath: r.url.appendingPathComponent("Contents/SharedSupport/SharedSupport.dmg").path))
+                check("a genuine installer is far larger than a stub",
+                      r.sizeBytes > 8_000_000_000)
+                check("its version is readable, not \"unknown\"", r.version != "unknown")
+                let match = SystemUpdate(label: "macOS Tahoe \(r.version)", title: "macOS Tahoe \(r.version)",
+                                         version: r.version, sizeKiB: 17_745_000,
+                                         recommended: true, requiresRestart: true)
+                check("it is offered for the release it actually installs",
+                      OSInstallerCache.cached(matching: match) != nil)
+                check("it is NOT offered for a different release",
+                      OSInstallerCache.cached(matching: SystemUpdate(
+                        label: "macOS 25.1", title: "macOS Sequoia 25.1", version: "25.1",
+                        sizeKiB: 17_000_000, recommended: true, requiresRestart: true)) == nil)
+                check("a complete installer is not reported as incomplete",
+                      OSInstallerCache.incomplete(matching: match) == nil)
+            } else {
+                print("  --   no complete installer on disk; cache assertions skipped")
+            }
 
             check("no cached installer is claimed when none matches",
                   OSInstallerCache.cached().isEmpty
