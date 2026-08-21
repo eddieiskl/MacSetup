@@ -367,6 +367,90 @@ enum Entry {
             exit(0)
         }
 
+        if args.contains("--start-upgrade") {
+            // Upgrades macOS from the cached installer, via Apple's own
+            // startosinstall. Always interactive, never scheduled: this
+            // restarts the Mac several times.
+            let dryRun = args.contains("--dry-run")
+            let force = args.contains("--force")
+            var delay = 300
+            if let d = args.firstIndex(of: "--reboot-delay"), d + 1 < args.count,
+               let n = Int(args[d + 1]) { delay = n }
+            let forceQuit = args.contains("--force-quit-apps")
+
+            final class Flag { var done = false }
+            let flag = Flag()
+            Task { @MainActor in
+                let sys = SystemUpdateChecker()
+                await sys.check()
+                let release = sys.updates.first(where: \.isSystemRelease)
+                let cached = OSInstallerCache.cached().first { c in
+                    guard let release else { return OSInstallerCache.isComplete(c) }
+                    return VersionCompare.compare(installed: c.version,
+                                                  latest: release.version) == .same
+                        && OSInstallerCache.isComplete(c)
+                }
+
+                let problems = OSUpgrade.preflight(cached: cached)
+                for p in problems { print("  ! \(p)") }
+                guard let cached, let tool = OSUpgrade.tool(in: cached) else {
+                    print("cannot start an upgrade from here")
+                    flag.done = true; return
+                }
+                // Blocking problems are the ones no amount of willingness
+                // fixes; the advisory ones can be overridden knowingly.
+                let blocking = problems.contains { $0.contains("not signed")
+                    || $0.contains("incomplete") || $0.contains("no startosinstall") }
+                if blocking {
+                    print("refusing to continue")
+                    flag.done = true; return
+                }
+                if !problems.isEmpty && !force && !dryRun {
+                    print("\npass --force to continue anyway, once you have read the above")
+                    flag.done = true; return
+                }
+
+                let user = NSUserName()
+                let a = OSUpgrade.arguments(user: user, rebootDelaySeconds: delay,
+                                            forceQuitApps: forceQuit)
+                for bad in OSUpgrade.forbiddenArguments where a.contains(bad) {
+                    print("internal error: refusing to pass \(bad)")
+                    flag.done = true; return
+                }
+
+                print("\ninstaller: \(cached.url.path) (\(cached.sizeText))")
+                print("would run: sudo \(tool.path) \(a.joined(separator: " "))")
+                if dryRun {
+                    print("\ndry run — nothing was started")
+                    flag.done = true; return
+                }
+
+                let script = OSUpgrade.helperScript(tool: tool, arguments: a,
+                                                    version: cached.version)
+                let url = FileManager.default.temporaryDirectory
+                    .appendingPathComponent("macsetup-upgrade-\(UUID().uuidString.prefix(8)).sh")
+                do {
+                    try script.write(to: url, atomically: true, encoding: .utf8)
+                    try FileManager.default.setAttributes([.posixPermissions: 0o700],
+                                                          ofItemAtPath: url.path)
+                } catch {
+                    print("could not stage the helper: \(error.localizedDescription)")
+                    flag.done = true; return
+                }
+                NSWorkspace.shared.open(
+                    [url],
+                    withApplicationAt: URL(fileURLWithPath: "/System/Applications/Utilities/Terminal.app"),
+                    configuration: NSWorkspace.OpenConfiguration(),
+                    completionHandler: nil)
+                print("\nopened Terminal — it will ask you to confirm, then for your password")
+                flag.done = true
+            }
+            while !flag.done {
+                _ = RunLoop.main.run(mode: .default, before: Date().addingTimeInterval(0.05))
+            }
+            exit(0)
+        }
+
         if args.contains("--cache-os-installer") {
             // Downloads the macOS installer ahead of time. This is a large,
             // slow download, so it reports what it is about to do, refuses
@@ -421,99 +505,35 @@ enum Entry {
                     print("not enough free space, leaving it alone")
                     flag.done = true; return
                 }
-                if OSInstallerCache.softwareUpdateIsBusy() {
-                    print("another softwareupdate is already running — not starting a second one")
-                    flag.done = true; return
-                }
-                let cmd = (["/usr/sbin/softwareupdate"]
-                           + OSInstallerCache.fetchArguments(version: release.version))
+                let cmd = "/usr/sbin/softwareupdate "
+                    + OSInstallerCache.fetchArguments(version: release.version)
+                        .joined(separator: " ")
                 if dryRun {
-                    print("would run: \(cmd.joined(separator: " "))")
+                    print("would run in Terminal: \(cmd)")
                     flag.done = true; return
                 }
-                // A drop partway through 18 GB is ordinary, so one attempt is
-                // the wrong design. Retries only for reasons a retry can fix.
-                let maxAttempts = 4
-                for attempt in 1...maxAttempts {
-                    print("running (attempt \(attempt)/\(maxAttempts)): \(cmd.joined(separator: " "))")
-                    let p = Process()
-                    p.executableURL = URL(fileURLWithPath: cmd[0])
-                    p.arguments = Array(cmd.dropFirst())
-                    let pipe = Pipe()
-                    p.standardOutput = pipe
-                    p.standardError = pipe
-                    // The handler runs on its own queue, so the buffer it
-                    // appends to has to be safe to touch from there.
-                    let sink = OutputSink()
-                    pipe.fileHandleForReading.readabilityHandler = { h in
-                        let d = h.availableData
-                        guard !d.isEmpty else { return }
-                        sink.append(d)
-                        FileHandle.standardOutput.write(d)
-                    }
-                    do { try p.run() } catch {
-                        print("could not start softwareupdate: \(error.localizedDescription)")
-                        break
-                    }
 
-                    // Watchdog. Waiting on exit alone means a wedged download
-                    // is waited on forever: it keeps the process, produces no
-                    // output, and never errors.
-                    let watchdog = Task.detached {
-                        // Disk is the signal that cannot lie. The final phase
-                        // writes an 18 GB payload while printing nothing, so
-                        // watching stdout alone killed a download at 87%.
-                        var lastFree = OSInstallerCache.freeBytes()
-                        var lastDiskChange = Date()
-                        while p.isRunning {
-                            try? await Task.sleep(nanoseconds: 60 * 1_000_000_000)
-                            guard p.isRunning else { return }
-                            let free = OSInstallerCache.freeBytes()
-                            // 20 MB of movement in a minute counts as alive.
-                            if abs(free - lastFree) > 20_000_000 {
-                                lastFree = free
-                                lastDiskChange = Date()
-                            }
-                            if OSInstallerCache.isStalled(lastOutput: sink.lastWrite,
-                                                          lastDiskChange: lastDiskChange) {
-                                FileHandle.standardOutput.write(Data(
-                                    "\nno output and no disk activity for \(Int(OSInstallerCache.stallTimeout / 60)) minutes — treating it as stalled\n".utf8))
-                                sink.markStalled()
-                                p.terminate()
-                                return
-                            }
-                        }
-                    }
-                    p.waitUntilExit()
-                    watchdog.cancel()
-                    pipe.fileHandleForReading.readabilityHandler = nil
-                    let captured = sink.text + (sink.wasStalled ? " stalled no progress" : "")
-
-                    if let got = OSInstallerCache.cached(matching: release) {
-                        print("\ncached: \(got.url.path) (\(got.sizeText))")
-                        break
-                    }
-                    // Report a stub as the failure it is, rather than letting
-                    // the next line call it "no installer" and move on.
-                    if let stub = OSInstallerCache.incomplete(matching: release) {
-                        print("\nonly a stub was produced (\(stub.sizeText), no SharedSupport payload)")
-                        if (try? FileManager.default.removeItem(at: stub.url)) == nil {
-                            print("could not discard it — run: sudo rm -rf \"\(stub.url.path)\"")
-                            break
-                        }
-                    }
-                    print("\nattempt \(attempt) finished with no installer (exit \(p.terminationStatus))")
-                    guard attempt < maxAttempts,
-                          OSInstallerCache.isRetryable(log: captured) else {
-                        if !OSInstallerCache.isRetryable(log: captured) {
-                            print("not a retryable failure — leaving it alone")
-                        }
-                        break
-                    }
-                    let wait = OSInstallerCache.backoffSeconds(attempt: attempt)
-                    print("retrying in \(wait)s…")
-                    try? await Task.sleep(nanoseconds: UInt64(wait) * 1_000_000_000)
+                // Handed to Terminal so Apple's own progress is visible and
+                // control-C works. Supervising this in-process is what caused
+                // a healthy download to be killed at 87%.
+                let script = OSInstallerCache.fetchScript(version: release.version,
+                                                          sizeText: release.sizeText)
+                let url = FileManager.default.temporaryDirectory
+                    .appendingPathComponent("macsetup-fetch-\(UUID().uuidString.prefix(8)).sh")
+                do {
+                    try script.write(to: url, atomically: true, encoding: .utf8)
+                    try FileManager.default.setAttributes([.posixPermissions: 0o700],
+                                                          ofItemAtPath: url.path)
+                } catch {
+                    print("could not stage the helper: \(error.localizedDescription)")
+                    flag.done = true; return
                 }
+                NSWorkspace.shared.open(
+                    [url],
+                    withApplicationAt: URL(fileURLWithPath: "/System/Applications/Utilities/Terminal.app"),
+                    configuration: NSWorkspace.OpenConfiguration(),
+                    completionHandler: nil)
+                print("opened Terminal — Apple's own download progress is shown there")
                 flag.done = true
             }
             while !flag.done {
@@ -633,52 +653,59 @@ enum Entry {
                 print("  --   no complete installer on disk; cache assertions skipped")
             }
 
+            // The upgrade path. It runs as root, so what it will and will not
+            // pass is worth pinning rather than trusting.
+            let upArgs = OSUpgrade.arguments(user: "someone", rebootDelaySeconds: 300,
+                                             forceQuitApps: false)
+            check("the upgrade never passes a destructive flag",
+                  !OSUpgrade.forbiddenArguments.contains { upArgs.contains($0) })
+            check("--eraseinstall is named as forbidden, not merely absent",
+                  OSUpgrade.forbiddenArguments.contains("--eraseinstall"))
+            check("the password is collected by prompt, never from stdin",
+                  upArgs.contains("--passprompt") && !upArgs.contains("--stdinpass"))
+            check("the reboot delay is clamped to what startosinstall accepts",
+                  OSUpgrade.arguments(user: "u", rebootDelaySeconds: 99_999,
+                                      forceQuitApps: false).contains("300")
+                  && OSUpgrade.arguments(user: "u", rebootDelaySeconds: -5,
+                                         forceQuitApps: false).contains("0"))
+            check("open apps are only force-quit when asked",
+                  !upArgs.contains("--forcequitapps")
+                  && OSUpgrade.arguments(user: "u", rebootDelaySeconds: 0,
+                                         forceQuitApps: true).contains("--forcequitapps"))
+            if let realInstaller = OSInstallerCache.cached().first(where: OSInstallerCache.isComplete) {
+                check("startosinstall is found inside a real installer",
+                      OSUpgrade.tool(in: realInstaller) != nil)
+                check("the installer is verified Apple-signed before running as root",
+                      OSUpgrade.isAppleSigned(realInstaller.url))
+                let helper = OSUpgrade.helperScript(
+                    tool: OSUpgrade.tool(in: realInstaller)!,
+                    arguments: upArgs, version: realInstaller.version)
+                check("the helper makes the user type YES before anything happens",
+                      helper.contains("Type YES to continue"))
+                // Check the command that actually runs, not the whole file: the
+                // helper deliberately names --eraseinstall in a comment to say
+                // it is never passed, and that comment is worth keeping.
+                let runLines = helper.split(separator: "\n")
+                    .map { $0.trimmingCharacters(in: .whitespaces) }
+                    .filter { $0.hasPrefix("sudo ") }
+                check("the helper actually invokes startosinstall", !runLines.isEmpty)
+                check("no command line in the helper carries a destructive flag",
+                      !runLines.contains { line in
+                          OSUpgrade.forbiddenArguments.contains { line.contains($0) }
+                      })
+                check("the helper says the password is not seen by MacSetup",
+                      helper.contains("MacSetup never sees it"))
+            }
+
             check("no cached installer is claimed when none matches",
                   OSInstallerCache.cached().isEmpty
                   ? OSInstallerCache.cached(matching: tahoe) == nil
                   : true)
 
-            // The real failure from this machine's first attempt: 41% in, the
-            // wifi dropped. That must be retried, or an overnight cache job
-            // gives up on the most ordinary failure there is.
-            let realFailure = """
-            Scanning for 26.7 installer
-            Installing: 41.0%Install failed with error: Installation failed
-            Error Domain=PKDownloadError Code=8 UserInfo={NSUnderlyingError=\
-            Error Domain=NSURLErrorDomain Code=-1009 "The Internet connection appears to be offline."
-            """
-            check("a mid-download network drop is retried",
-                  OSInstallerCache.isRetryable(log: realFailure))
-            check("running out of disk is not retried",
-                  !OSInstallerCache.isRetryable(log: "Error: not enough free space to continue"))
-            check("an unavailable version is not retried",
-                  !OSInstallerCache.isRetryable(log: "Could not find installer for version 99.9"))
-            check("a clean run is not retried",
-                  !OSInstallerCache.isRetryable(log: "Install finished successfully"))
-            let old = Date().addingTimeInterval(-50 * 60)
-            let recent = Date().addingTimeInterval(-60)
-            check("silent and no disk activity for long enough is stalled",
-                  OSInstallerCache.isStalled(lastOutput: old, lastDiskChange: old))
-            // Regression: the watchdog killed a download at 87% because the
-            // final phase writes gigabytes while printing nothing at all.
-            check("quiet but still writing to disk is NOT stalled",
-                  !OSInstallerCache.isStalled(lastOutput: old, lastDiskChange: recent))
-            check("talking but not writing is not stalled either",
-                  !OSInstallerCache.isStalled(lastOutput: recent, lastDiskChange: old))
-            check("the stall timeout allows for a long assembly phase",
-                  OSInstallerCache.stallTimeout >= 30 * 60)
-            check("a stalled run is retried, since it produces no error text",
-                  OSInstallerCache.isRetryable(log: "Installing: 90.0% stalled no progress"))
-            check("backoff grows and then caps",
-                  OSInstallerCache.backoffSeconds(attempt: 1) == 30
-                  && OSInstallerCache.backoffSeconds(attempt: 2) == 60
-                  && OSInstallerCache.backoffSeconds(attempt: 3) == 120
-                  && OSInstallerCache.backoffSeconds(attempt: 99) == 300)
+            // The download supervisor these once covered is gone. It lives in
+            // Terminal now, where Apple reports its own progress — so there is
+            // no stall to detect and no retry to classify.
 
-            // Regression, from a real run: the interface let a macOS release
-            // be selected, the engine queued softwareupdate -i, and it
-            // downloaded ~17 GB before reporting "Failed to authenticate".
-            // Every layer must refuse it independently.
             let safari2 = SystemUpdate(label: "Safari27.0", title: "Safari", version: "27.0",
                                        sizeKiB: 100_000, recommended: true, requiresRestart: true)
             let kept = InstallEngine.withoutSystemReleases([tahoe, safari2], log: { _ in })

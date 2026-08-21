@@ -685,6 +685,23 @@ else
   bad "macOS releases are refused before anything is downloaded"
 fi
 
+# The upgrade runs Apple's installer as root, so a dry run must start nothing
+# and the command must never carry a destructive flag.
+if $BIN --start-upgrade --dry-run >/tmp/st-up.txt 2>&1; then
+  if grep -q 'dry run — nothing was started' /tmp/st-up.txt \
+     && ! grep -q 'eraseinstall' /tmp/st-up.txt \
+     && ! grep -q 'stdinpass' /tmp/st-up.txt; then
+    ok "the upgrade dry run starts nothing and passes no destructive flag"
+  else
+    bad "the upgrade dry run starts nothing and passes no destructive flag" \
+        "$(tail -2 /tmp/st-up.txt)"
+  fi
+elif grep -q 'cannot start an upgrade from here' /tmp/st-up.txt; then
+  skip "no cached macOS installer to test the upgrade path"
+else
+  bad "the upgrade dry run starts nothing" "$(tail -2 /tmp/st-up.txt)"
+fi
+
 # Reporting login-item status must never change it: a status query that
 # silently registered the app would be a nasty surprise on a colleague's Mac.
 BEFORE_LI="$($BIN --login-item 2>&1)"
@@ -701,7 +718,7 @@ fi
 # latter: the stub-removal step ran before the dry-run branch.
 if $BIN --cache-os-installer --dry-run >/tmp/st-cache.txt 2>&1 \
    && grep -qE 'would run: /usr/sbin/softwareupdate --fetch-full-installer|already cached:' /tmp/st-cache.txt \
-   && ! grep -qE '^running \(attempt|^removed it' /tmp/st-cache.txt; then
+   && ! grep -qE '^running \(attempt|^removed it|^opened Terminal' /tmp/st-cache.txt; then
   ok "the installer cache dry run downloads nothing and deletes nothing"
 elif grep -q 'no macOS release pending' /tmp/st-cache.txt; then
   skip "no macOS release pending to cache"
