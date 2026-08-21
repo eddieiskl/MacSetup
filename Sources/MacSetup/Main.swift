@@ -437,11 +437,15 @@ enum Entry {
                     print("could not stage the helper: \(error.localizedDescription)")
                     flag.done = true; return
                 }
-                NSWorkspace.shared.open(
-                    [url],
-                    withApplicationAt: URL(fileURLWithPath: "/System/Applications/Utilities/Terminal.app"),
-                    configuration: NSWorkspace.OpenConfiguration(),
-                    completionHandler: nil)
+                // `open -a Terminal <file>` rather than NSWorkspace: the
+                // latter brought Terminal to the front but silently dropped
+                // the script, so the window appeared with nothing in it. The
+                // prelude has always used `open -a`; this now matches.
+                if !OSUpgrade.openInTerminal(url) {
+                    print("could not hand the script to Terminal. Run it yourself:")
+                    print("    bash '\(url.path)'")
+                    flag.done = true; return
+                }
                 print("\nopened Terminal — it will ask you to confirm, then for your password")
                 flag.done = true
             }
@@ -528,11 +532,15 @@ enum Entry {
                     print("could not stage the helper: \(error.localizedDescription)")
                     flag.done = true; return
                 }
-                NSWorkspace.shared.open(
-                    [url],
-                    withApplicationAt: URL(fileURLWithPath: "/System/Applications/Utilities/Terminal.app"),
-                    configuration: NSWorkspace.OpenConfiguration(),
-                    completionHandler: nil)
+                // `open -a Terminal <file>` rather than NSWorkspace: the
+                // latter brought Terminal to the front but silently dropped
+                // the script, so the window appeared with nothing in it. The
+                // prelude has always used `open -a`; this now matches.
+                if !OSUpgrade.openInTerminal(url) {
+                    print("could not hand the script to Terminal. Run it yourself:")
+                    print("    bash '\(url.path)'")
+                    flag.done = true; return
+                }
                 print("opened Terminal — Apple's own download progress is shown there")
                 flag.done = true
             }
@@ -689,6 +697,17 @@ enum Entry {
                     .map { $0.trimmingCharacters(in: .whitespaces) }
                     .filter { $0.hasPrefix("sudo ") }
                 check("the helper actually invokes startosinstall", !runLines.isEmpty)
+                // Regression: NSWorkspace brought Terminal forward without the
+                // script, so the window opened empty and nothing ran. Both
+                // helpers must go through `open -a`, as the generated scripts
+                // always have.
+                let mainSrc = (try? String(contentsOfFile: "Sources/MacSetup/Main.swift",
+                                           encoding: .utf8)) ?? ""
+                if !mainSrc.isEmpty {
+                    check("helpers are handed to Terminal by open -a, not NSWorkspace",
+                          !mainSrc.contains("withApplicationAt: URL(fileURLWithPath: \"/System/Applications/Utilities/Terminal.app\")")
+                          && mainSrc.contains("OSUpgrade.openInTerminal"))
+                }
                 check("no command line in the helper carries a destructive flag",
                       !runLines.contains { line in
                           OSUpgrade.forbiddenArguments.contains { line.contains($0) }

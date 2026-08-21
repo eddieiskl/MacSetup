@@ -165,3 +165,21 @@ enum OSUpgrade {
         """
     }
 }
+
+extension OSUpgrade {
+    /// Hand a script to Terminal and have it actually run.
+    ///
+    /// `NSWorkspace.open(_:withApplicationAt:...)` brought Terminal forward but
+    /// did not run the file — the user got an empty window and nothing
+    /// happened. `open -a` is what the generated scripts have always used, and
+    /// it works; matching it here removes the discrepancy.
+    @discardableResult
+    static func openInTerminal(_ script: URL) -> Bool {
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+        p.arguments = ["-a", "Terminal", script.path]
+        guard (try? p.run()) != nil else { return false }
+        p.waitUntilExit()
+        return p.terminationStatus == 0
+    }
+}

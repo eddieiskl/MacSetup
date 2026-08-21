@@ -16,6 +16,27 @@ struct UpdatesView: View {
     @State private var loginAtStart = LoginItem.isEnabled
     @State private var loginError: String?
     @State private var caching = false
+    @State private var osDownloadMessage: String?
+
+    /// Starts the installer download in Terminal, where Apple's own progress
+    /// is shown. Nothing here supervises it — that guessing is what killed a
+    /// download at 87%.
+    private func startOSDownload(_ u: SystemUpdate) {
+        let script = OSInstallerCache.fetchScript(version: u.version, sizeText: u.sizeText)
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("macsetup-fetch-\(UUID().uuidString.prefix(8)).sh")
+        do {
+            try script.write(to: url, atomically: true, encoding: .utf8)
+            try FileManager.default.setAttributes([.posixPermissions: 0o700],
+                                                  ofItemAtPath: url.path)
+        } catch {
+            osDownloadMessage = "Could not prepare the download."
+            return
+        }
+        if !OSUpgrade.openInTerminal(url) {
+            osDownloadMessage = "Could not open Terminal."
+        }
+    }
     @State private var cacheMessage: String?
 
     /// Runs the same fetch the command line does, so the two cannot drift.
@@ -258,6 +279,18 @@ struct UpdatesView: View {
                 Spacer()
             }
 
+            if system.updates.contains(where: \.isSystemRelease) {
+                Text(OSInstallerCache.cached().contains(where: OSInstallerCache.isComplete)
+                     ? "macOS is downloaded and ready. Upgrade Now opens Apple's installer — your files and apps are kept, and it will ask for your password and restart."
+                     : "macOS updates are installed by Apple's own installer, not by MacSetup: Apple requires your password for a system release. Download it now to make upgrading later quick, or go straight to Software Update.")
+                    .font(.system(size: 11)).foregroundStyle(.tertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if let osDownloadMessage {
+                Text(osDownloadMessage)
+                    .font(.system(size: 11)).foregroundStyle(.secondary)
+            }
+
             HStack(spacing: 10) {
                 Text("When you next unlock this Mac")
                     .font(.system(size: 12))
@@ -452,11 +485,7 @@ struct UpdatesView: View {
                             // only thing that works instead of queueing a run
                             // that is guaranteed to fail.
                             if u.isSystemRelease {
-                                if let ready = OSInstallerCache.cached(matching: u) {
-                                    OSInstallerCache.open(ready)
-                                } else {
-                                    UnlockThrottle.openSoftwareUpdate()
-                                }
+                                // The buttons on the right do the work now.
                             } else if state.selectedSystemUpdates.contains(u.label) {
                                 state.selectedSystemUpdates.remove(u.label)
                             } else {
@@ -486,20 +515,29 @@ struct UpdatesView: View {
                                 }
                                 Spacer()
                                 if u.isSystemRelease {
-                                    // Not a dead end: MacSetup cannot install
-                                    // this, but it can hand the user straight
-                                    // to the one thing that can.
-                                    Button {
-                                        UnlockThrottle.openSoftwareUpdate()
-                                    } label: {
-                                        Text("needs you")
-                                            .font(.system(size: 9.5, weight: .medium))
-                                            .padding(.horizontal, 6).padding(.vertical, 2)
-                                            .background(Color.secondary.opacity(0.16), in: Capsule())
-                                            .foregroundStyle(.secondary)
+                                    // Spelled out as buttons rather than a
+                                    // clickable row. Colleagues should not
+                                    // have to guess that a row is a control,
+                                    // and never have to open a terminal.
+                                    if let ready = OSInstallerCache.cached(matching: u) {
+                                        Label("Downloaded", systemImage: "checkmark.circle.fill")
+                                            .font(.system(size: 10.5))
+                                            .foregroundStyle(.green)
+                                        Button("Upgrade Now…") { OSInstallerCache.open(ready) }
+                                            .buttonStyle(.borderedProminent)
+                                            .controlSize(.small)
+                                            .help("Opens Apple's installer. Your files and apps are kept.")
+                                    } else {
+                                        Button("Download \(u.sizeText)") {
+                                            osDownloadMessage = "Opening Terminal — Apple shows the progress there."
+                                            startOSDownload(u)
+                                        }
+                                        .controlSize(.small)
+                                        .help("Downloads the installer now so upgrading later is quick")
+                                        Button("Software Update…") { UnlockThrottle.openSoftwareUpdate() }
+                                            .controlSize(.small)
+                                            .help("Install it the usual way, through System Settings")
                                     }
-                                    .buttonStyle(.plain)
-                                    .help("A macOS release needs a volume owner password, so only Software Update can install it. Click to open it.")
                                 }
                                 if u.requiresRestart {
                                     Text("restart")

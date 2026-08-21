@@ -328,6 +328,7 @@ if [ "$OFFLINE" = "0" ]; then
   $BIN --emit-script nudge > "$PT/p.sh" 2>/dev/null
   sed -i '' "s|^APPDIR=.*|APPDIR='$PT/Applications'|; s|^LOG=.*|LOG='$PT/p.log'|; s|^SKIP_INSTALLED=.*|SKIP_INSTALLED=0|" "$PT/p.sh"
   sed -i '' 's|if ! osascript -e "do shell script .* with administrator privileges" >/dev/null 2>"$STAGE/auth.err"; then|if ! true; then|' "$PT/p.sh"
+  neuter_auth "$PT/p.sh" || true
   env -i HOME="$HOME" PATH=/usr/bin:/bin /bin/bash "$PT/p.sh" > "$PT/out.txt" 2>&1
   if grep -q '@@MS|nudge|verifying|Team ID T4SK8ZXCXG' "$PT/out.txt"; then
     ok "signature verification works with /usr/sbin missing from PATH"
@@ -402,6 +403,28 @@ with_timeout() {
   return $rc
 }
 
+# Any generated script the suite runs must have its authorisation call removed
+# first. Two of them were neutered and three were not, so a plain test run
+# could raise a real password dialog on the user's Mac — which it did.
+# neuter_auth <script> [replacement]
+#
+# The replacement matters: most tests want the privileged step to vanish, but
+# the package test wants it to run the elevated batch directly so it can check
+# the results. Substituting `true` there silently made the test assert nothing.
+neuter_auth() {
+  local repl="${2:-true}"
+  sed -i '' "s|osascript -e \"do shell script .* with administrator privileges\"|${repl}|g" "$1"
+  sed -i '' 's|if ! osascript -e "do shell script .* with administrator privileges" >/dev/null 2>"$STAGE/auth.err"; then|if ! true; then|' "$1"
+  # Verify rather than hope. A sed that silently fails to match is how a test
+  # run put a real password dialog in front of the user — twice. If anything
+  # capable of prompting survives, refuse to run the script at all.
+  if grep -q 'administrator privileges' "$1"; then
+    bad "a generated script still contains an authorisation call" "$1"
+    return 1
+  fi
+  return 0
+}
+
 PKGT="$SANDBOX/pkgflush"
 mkdir -p "$PKGT/bin"
 printf '#!/bin/bash\nexit 0\n' > "$PKGT/bin/installer"   # stub, installs nothing
@@ -410,6 +433,7 @@ $BIN --emit-script zoom > "$PKGT/run.sh" 2>/dev/null
 sed -i '' "s|^APPDIR=.*|APPDIR='$SANDBOX/Applications'|; s|^LOG=.*|LOG='$PKGT/run.log'|; s|^SKIP_INSTALLED=.*|SKIP_INSTALLED=0|" "$PKGT/run.sh"
 # Run the elevated batch directly instead of through an auth prompt.
 sed -i '' 's|if ! osascript -e "do shell script .* with administrator privileges" >/dev/null 2>"$STAGE/auth.err"; then|if ! /bin/bash "$root_script" >/dev/null 2>\&1; then|' "$PKGT/run.sh"
+neuter_auth "$PKGT/run.sh" '/bin/bash "$root_script"' || true
 # installer is now called by absolute path (a GUI shell may lack /usr/sbin), so
 # a PATH shim no longer intercepts it — point the script at the stub directly.
 sed -i '' "s|/usr/sbin/installer -pkg|$PKGT/bin/installer -pkg|" "$PKGT/run.sh"
@@ -497,7 +521,7 @@ printf '%s\n' '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//
   > "$UNT/Applications/Rectangle.app/Contents/Info.plist"
 $BIN --emit-uninstall rectangle > "$UNT/u.sh" 2>/dev/null
 sed -i '' "s|^APPDIR=.*|APPDIR='$UNT/Applications'|; s|^LOG=.*|LOG='$UNT/u.log'|; s|^USER_HOME=.*|USER_HOME='$UNT'|" "$UNT/u.sh"
-bash "$UNT/u.sh" >/dev/null 2>&1
+neuter_auth "$UNT/u.sh" && bash "$UNT/u.sh" >/dev/null 2>&1
 if [ ! -d "$UNT/Applications/Rectangle.app" ] && [ -d "$UNT/.Trash/Rectangle.app" ]; then
   ok "uninstall moves the bundle to the Trash rather than deleting it"
 else
@@ -512,7 +536,7 @@ printf '%s\n' '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//
 $BIN --emit-uninstall rectangle > "$UNT/n.sh" 2>/dev/null
 sed -i '' "s|^APPDIR=.*|APPDIR='$UNT/Applications'|; s|^LOG=.*|LOG='$UNT/n.log'|; s|^USER_HOME=.*|USER_HOME='$UNT'|" "$UNT/n.sh"
 sed -i '' "s|^msu_uninstall 'rectangle'.*|msu_uninstall 'bundle:com.example.internal' 'Some Internal Tool' 'com.example.internal' 'app' ''|" "$UNT/n.sh"
-bash "$UNT/n.sh" >/dev/null 2>&1
+neuter_auth "$UNT/n.sh" && bash "$UNT/n.sh" >/dev/null 2>&1
 if [ ! -d "$FAKE" ] && [ -d "$UNT/.Trash/Some Internal Tool.app" ]; then
   ok "apps outside the catalogue can be removed (colon in id survives quoting)"
 else
@@ -624,7 +648,7 @@ RC="$SANDBOX/rcpt"
 mkdir -p "$RC/Applications"
 $BIN --emit-script gmail > "$RC/r.sh" 2>/dev/null
 sed -i '' "s|^APPDIR=.*|APPDIR='$RC/Applications'|; s|^LOG=.*|LOG='$RC/r.log'|; s|^USER_HOME=.*|USER_HOME='$RC'|" "$RC/r.sh"
-bash "$RC/r.sh" >/dev/null 2>&1
+neuter_auth "$RC/r.sh" && bash "$RC/r.sh" >/dev/null 2>&1
 if [ -s "$RC/Library/Application Support/MacSetup/receipts.jsonl" ]; then
   ok "install receipts are written for MDM reporting"
 else
@@ -700,6 +724,18 @@ elif grep -q 'cannot start an upgrade from here' /tmp/st-up.txt; then
   skip "no cached macOS installer to test the upgrade path"
 else
   bad "the upgrade dry run starts nothing" "$(tail -2 /tmp/st-up.txt)"
+fi
+
+# The suite must never raise a real authorisation dialog, and must never leave
+# the user's own launch agent re-pointed at a build directory. Both happened.
+SUITE_SRC="Scripts/selftest.sh"
+UNNEUTERED=$(grep -cE '^[[:space:]]*(with_timeout [0-9]+ )?(env [^|]*)?bash "\$[A-Z]+/[a-z]+\.sh"' "$SUITE_SRC" 2>/dev/null || echo 0)
+NEUTERED=$(grep -c 'neuter_auth' "$SUITE_SRC" 2>/dev/null || echo 0)
+if [ "$NEUTERED" -ge 4 ] && grep -q 'trap restore_agent EXIT' "$SUITE_SRC"; then
+  ok "the suite neuters authorisation and restores the real launch agent"
+else
+  bad "the suite neuters authorisation and restores the real launch agent" \
+      "neuter_auth x$NEUTERED, agent restore $(grep -c 'trap restore_agent EXIT' "$SUITE_SRC")"
 fi
 
 # Reporting login-item status must never change it: a status query that
@@ -826,6 +862,26 @@ fi
 
 # The configured hour must survive a write/read round trip — it was silently
 # reset once, and the only way to notice was reading the plist by hand.
+# The schedule test writes the *real* launch agent, so whatever the user has
+# configured is saved and put back. Without this the suite silently re-points a
+# working scheduled job at a debug binary inside the source tree — which then
+# breaks the moment the tree is cleaned or moved.
+REAL_AGENT="$HOME/Library/LaunchAgents/local.macsetup.updatecheck.plist"
+AGENT_BACKUP=""
+if [ -f "$REAL_AGENT" ]; then
+  AGENT_BACKUP="$(mktemp -t macsetup-agent)"
+  cp "$REAL_AGENT" "$AGENT_BACKUP"
+fi
+restore_agent() {
+  if [ -n "$AGENT_BACKUP" ] && [ -f "$AGENT_BACKUP" ]; then
+    cp "$AGENT_BACKUP" "$REAL_AGENT"
+    launchctl bootout "gui/$(id -u)/local.macsetup.updatecheck" 2>/dev/null || true
+    launchctl bootstrap "gui/$(id -u)" "$REAL_AGENT" 2>/dev/null || true
+    rm -f "$AGENT_BACKUP"
+  fi
+}
+trap restore_agent EXIT
+
 if $BIN --schedule set --hour 9 --action notify >/dev/null 2>&1; then
   SH=$(/usr/libexec/PlistBuddy -c 'Print :StartCalendarInterval:Hour' \
        "$HOME/Library/LaunchAgents/local.macsetup.updatecheck.plist" 2>/dev/null)
