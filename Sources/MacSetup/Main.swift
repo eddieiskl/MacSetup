@@ -739,6 +739,30 @@ enum Entry {
                       viewSrc.contains("let selectable = system.updates.filter { !$0.isSystemRelease }"))
             }
 
+            // Resolving one GitHub app against its asset pattern costs up to
+            // ~10 requests; the cache exists so a repeat check doesn't repeat
+            // that walk. A namespaced key keeps this from touching real entries.
+            let cacheTestKey = "selftest.cache.\(ProcessInfo.processInfo.globallyUniqueString)"
+            check("an unresolved repo is a cache miss, not a false answer",
+                  GitHubTagCache.get(cacheTestKey) == nil)
+            GitHubTagCache.set(cacheTestKey, tag: "v1.2.3")
+            check("a resolved tag round-trips through the cache",
+                  (GitHubTagCache.get(cacheTestKey) ?? nil) == "v1.2.3")
+            GitHubTagCache.set(cacheTestKey, tag: nil)
+            if let hit = GitHubTagCache.get(cacheTestKey) {
+                check("'nothing installable' is itself cached, not re-walked every check",
+                      hit == nil)
+            } else {
+                check("'nothing installable' is itself cached, not re-walked every check", false)
+            }
+            GitHubTagCache.set(cacheTestKey, tag: "stale",
+                               checked: Date().addingTimeInterval(-GitHubTagCache.ttl - 1))
+            check("an entry past the TTL is a miss again, not a stale answer forever",
+                  GitHubTagCache.get(cacheTestKey) == nil)
+            GitHubTagCache.clear(cacheTestKey)
+            check("clearing removes the entry",
+                  GitHubTagCache.get(cacheTestKey) == nil)
+
             check("no cached installer is claimed when none matches",
                   OSInstallerCache.cached().isEmpty
                   ? OSInstallerCache.cached(matching: tahoe) == nil

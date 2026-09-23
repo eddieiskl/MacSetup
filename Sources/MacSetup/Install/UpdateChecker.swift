@@ -202,17 +202,28 @@ final class UpdateChecker: ObservableObject {
     /// than one platform. Obsidian publishes Android builds to the same repo,
     /// so its latest release carries only an .apk — and MacSetup offered an
     /// update whose install would have produced the previous version, forever.
+    ///
+    /// Resolving this walks the releases page plus one asset-listing fetch per
+    /// candidate tag — up to ~10 requests for one app. Cached per repo+pattern
+    /// so checking on every launch doesn't repeat that on a Mac whose apps
+    /// haven't moved since the last check.
     private static func githubLatestTag(_ repo: String, matching pattern: String?) async -> String? {
         guard let pattern, !pattern.isEmpty else { return await githubLatestTag(repo) }
 
+        let cacheKey = "\(repo)#\(pattern)"
+        if let cached = GitHubTagCache.get(cacheKey) { return cached }
+
+        var resolved: String?
         let newest = await githubLatestTag(repo)
         if let newest, await releaseHasAsset(repo: repo, tag: newest, pattern: pattern) {
-            return newest
+            resolved = newest
+        } else {
+            for tag in await recentTags(repo).prefix(8) where tag != newest {
+                if await releaseHasAsset(repo: repo, tag: tag, pattern: pattern) { resolved = tag; break }
+            }
         }
-        for tag in await recentTags(repo).prefix(8) where tag != newest {
-            if await releaseHasAsset(repo: repo, tag: tag, pattern: pattern) { return tag }
-        }
-        return nil          // nothing installable: better silent than a false update
+        GitHubTagCache.set(cacheKey, tag: resolved)
+        return resolved          // nil means nothing installable: better silent than a false update
     }
 
     /// Recent tags, newest first, from the releases page.
@@ -253,6 +264,13 @@ final class UpdateChecker: ObservableObject {
     }
 
     private static func githubLatestTag(_ repo: String) async -> String? {
+        if let cached = GitHubTagCache.get(repo) { return cached }
+        let tag = await githubLatestTagUncached(repo)
+        GitHubTagCache.set(repo, tag: tag)
+        return tag
+    }
+
+    private static func githubLatestTagUncached(_ repo: String) async -> String? {
         if let url = URL(string: "https://github.com/\(repo)/releases/latest") {
             var req = URLRequest(url: url)
             req.httpMethod = "HEAD"
@@ -346,5 +364,42 @@ final class UpdateChecker: ObservableObject {
             }
             return out
         }.value
+    }
+}
+
+/// Persists resolved GitHub release tags across runs, so a launch-time or
+/// scheduled check doesn't re-scrape GitHub for a repo it already resolved
+/// recently. `get` returns a double optional to tell "not cached" from "cached
+/// as no installable release" apart: the outer `nil` is a miss, `.some(nil)` is
+/// a confirmed cache hit that found nothing to offer.
+enum GitHubTagCache {
+    private static let key = "githubTagCache"
+    static let ttl: TimeInterval = 6 * 3600
+
+    struct Entry: Codable {
+        let tag: String?
+        let checked: Date
+    }
+
+    static func get(_ cacheKey: String) -> String?? {
+        guard let dict = UserDefaults.standard.dictionary(forKey: key),
+              let raw = dict[cacheKey] as? Data,
+              let entry = try? JSONDecoder().decode(Entry.self, from: raw),
+              Date().timeIntervalSince(entry.checked) < ttl
+        else { return nil }
+        return .some(entry.tag)
+    }
+
+    static func set(_ cacheKey: String, tag: String?, checked: Date = Date()) {
+        guard let data = try? JSONEncoder().encode(Entry(tag: tag, checked: checked)) else { return }
+        var dict = UserDefaults.standard.dictionary(forKey: key) ?? [:]
+        dict[cacheKey] = data
+        UserDefaults.standard.set(dict, forKey: key)
+    }
+
+    static func clear(_ cacheKey: String) {
+        var dict = UserDefaults.standard.dictionary(forKey: key) ?? [:]
+        dict.removeValue(forKey: cacheKey)
+        UserDefaults.standard.set(dict, forKey: key)
     }
 }
