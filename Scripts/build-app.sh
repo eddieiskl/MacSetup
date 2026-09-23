@@ -42,7 +42,7 @@ else
   X86_BIN=""; X86_HOST=""
 fi
 
-echo "==> Assembling $APP…"
+echo "==> Assembling ${APP}…"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 if [ -n "$X86_BIN" ] && [ -f "$X86_BIN" ]; then
