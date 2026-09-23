@@ -713,10 +713,16 @@ asset **filename**, not the full URL.
 - **Web apps are launchers, not real PWAs.** They have no separate storage or
   push notifications — they share the browser's profile. That is deliberate: it
   is what keeps SSO working. Deleting the .app removes it completely.
-- **Team IDs are only partly verified.** 12 were confirmed against apps installed
-  on the build machine or against the signed installer itself (including Claude,
-  ChatGPT and Copilot); the rest are unverified, which is why a mismatch warns
-  rather than fails by default. `verify-catalog.sh teamids` confirms more as you
+- **Team IDs are only partly verified.** 78 apps carry one; 29 of those were
+  confirmed by actually downloading the vendor's binary (or the release asset
+  a GitHub-sourced app resolves to) and reading its code signature, rather
+  than trusting a Team ID typed in from memory — including Claude, ChatGPT,
+  Copilot, and every direct/GitHub-sourced app in the catalogue. That pass
+  also caught two stale bundle ids: Xcodes moved to `com.xcodesorg.xcodesapp`
+  under new ownership, and RustDesk's was recorded in the wrong case
+  (`com.carriez.RustDesk` vs. the real `com.carriez.rustdesk`) — both fixed.
+  The remaining apps are unverified, which is why a mismatch warns rather
+  than fails by default. `verify-catalog.sh teamids` confirms more as you
   install more.
 - **GitHub's API allows 60 unauthenticated calls/hour.** Update checks mostly
   avoid it — releases are resolved from the HTML pages, not the API, and

@@ -399,7 +399,7 @@
    "summary": "Run Llama, Mistral, Gemma and other models locally. Includes the CLI.",
    "homepage": "https://ollama.com/",
    "bundleId": "com.electron.ollama",
-   "teamId": null,
+   "teamId": "3MU9H2V9Y9",
    "tags": [
     "ai",
     "free",
@@ -1649,7 +1649,7 @@
    "summary": "Collaborative interface design.",
    "homepage": "https://www.figma.com/downloads/",
    "bundleId": "com.figma.Desktop",
-   "teamId": null,
+   "teamId": "T8RA8NE3B7",
    "tags": [
     "popular",
     "business"
@@ -1747,7 +1747,7 @@
    "summary": "Native macOS vector design tool.",
    "homepage": "https://www.sketch.com/",
    "bundleId": "com.bohemiancoding.sketch3",
-   "teamId": null,
+   "teamId": "WUGMZZ5K46",
    "tags": [],
    "license": "commercial",
    "source": {
@@ -1936,7 +1936,7 @@
    "summary": "Visual Git client.",
    "homepage": "https://desktop.github.com/",
    "bundleId": "com.github.GitHubClient",
-   "teamId": null,
+   "teamId": "VEKTX9H2N7",
    "tags": [
     "free"
    ],
@@ -2034,7 +2034,7 @@
    "summary": "API development and testing.",
    "homepage": "https://www.postman.com/",
    "bundleId": "com.postmanlabs.mac",
-   "teamId": null,
+   "teamId": "H7H8Q7M5CK",
    "tags": [
     "popular"
    ],
@@ -2132,7 +2132,7 @@
    "summary": "Modern terminal with blocks and AI command search.",
    "homepage": "https://www.warp.dev/",
    "bundleId": "dev.warp.Warp-Stable",
-   "teamId": null,
+   "teamId": "2BBY89MBSN",
    "tags": [],
    "license": "freemium",
    "source": {
@@ -2156,8 +2156,8 @@
    "vendor": "XcodesOrg",
    "summary": "Install and switch between multiple Xcode versions.",
    "homepage": "https://www.xcodes.app/",
-   "bundleId": "com.robotsandpencils.XcodesApp",
-   "teamId": null,
+   "bundleId": "com.xcodesorg.xcodesapp",
+   "teamId": "ZU6GR6B2FY",
    "tags": [
     "open-source"
    ],
@@ -2231,7 +2231,7 @@
    "summary": "Modern native media player for macOS.",
    "homepage": "https://iina.io/",
    "bundleId": "com.colliderli.iina",
-   "teamId": null,
+   "teamId": "67CQ77V27R",
    "tags": [
     "open-source",
     "free"
@@ -2760,7 +2760,7 @@
    "summary": "Docs, wikis and databases in one workspace.",
    "homepage": "https://www.notion.so/desktop",
    "bundleId": "notion.id",
-   "teamId": null,
+   "teamId": "LBQJ96FQ8D",
    "tags": [
     "popular"
    ],
@@ -2960,7 +2960,7 @@
    "summary": "Lightweight remote desktop for supporting users.",
    "homepage": "https://anydesk.com/",
    "bundleId": "com.philandro.anydesk",
-   "teamId": null,
+   "teamId": "KHRWM533LU",
    "tags": [
     "business"
    ],
@@ -3012,7 +3012,7 @@
    "summary": "Open-source managed software deployment for Mac fleets.",
    "homepage": "https://www.munki.org/",
    "bundleId": null,
-   "teamId": null,
+   "teamId": "T4SK8ZXCXG",
    "tags": [
     "business",
     "open-source",
@@ -3085,8 +3085,8 @@
    "vendor": "RustDesk",
    "summary": "Open-source, self-hostable remote desktop.",
    "homepage": "https://rustdesk.com/",
-   "bundleId": "com.carriez.RustDesk",
-   "teamId": null,
+   "bundleId": "com.carriez.rustdesk",
+   "teamId": "HZF9JMC8YN",
    "tags": [
     "open-source",
     "business",
@@ -3189,7 +3189,7 @@
    "summary": "Open-source password manager with self-hosting option.",
    "homepage": "https://bitwarden.com/",
    "bundleId": "com.bitwarden.desktop",
-   "teamId": null,
+   "teamId": "LTZ2PFU5D6",
    "tags": [
     "open-source",
     "business"
@@ -3458,7 +3458,7 @@
    "summary": "Fixes scaling and HiDPI on external monitors. Invaluable on multi-monitor setups.",
    "homepage": "https://github.com/waydabber/BetterDisplay",
    "bundleId": "pro.betterdisplay.BetterDisplay",
-   "teamId": null,
+   "teamId": "299YSU96J7",
    "tags": [
     "business",
     "popular"
@@ -3578,7 +3578,7 @@
    "summary": "Lightweight clipboard history.",
    "homepage": "https://maccy.app/",
    "bundleId": "org.p0deje.Maccy",
-   "teamId": null,
+   "teamId": "MN3X4648SC",
    "tags": [
     "free",
     "open-source"
@@ -3701,7 +3701,7 @@
    "summary": "CPU, memory, network and battery readouts in the menu bar.",
    "homepage": "https://github.com/exelban/stats",
    "bundleId": "eu.exelban.Stats",
-   "teamId": null,
+   "teamId": "RP2S87B72W",
    "tags": [
     "free",
     "open-source",
@@ -3822,7 +3822,7 @@
    "summary": "Free virtual machines on Apple Silicon, built on QEMU.",
    "homepage": "https://mac.getutm.app/",
    "bundleId": "com.utmapp.UTM",
-   "teamId": null,
+   "teamId": "WDNLXAD4W8",
    "tags": [
     "free",
     "open-source"
