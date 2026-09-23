@@ -130,6 +130,19 @@ enum UIRenderer {
 
         shot("08-installed-pane", CGSize(width: 900, height: 500)) { InstalledView() }
 
+        let templateSample = ["it", "gamer", "student"]
+            .compactMap { id in state.roleTemplates.first { $0.id == id } }
+        shot("09-role-template-cards", CGSize(width: 900, height: 260)) {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Role template cards — enterprise and consumer")
+                    .font(.system(size: 11)).foregroundStyle(.secondary)
+                HStack(alignment: .top, spacing: 10) {
+                    ForEach(templateSample) { RoleTemplateCard(template: $0, showSaveProfile: .constant(false)) }
+                }
+            }
+            .padding(16)
+        }
+
         shot("05-action-bar", CGSize(width: 940, height: 70)) {
             ActionBar(showScript: .constant(false), showQueue: .constant(false))
         }

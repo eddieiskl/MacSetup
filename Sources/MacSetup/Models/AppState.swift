@@ -192,6 +192,15 @@ final class AppState: ObservableObject {
 
     var selectedWebAppObjects: [WebApp] { allWebApps.filter { selectedWebApps.contains($0.id) } }
 
+    var roleTemplates: [RoleTemplate] { catalog?.roleTemplateList ?? [] }
+
+    var roleTemplatesByGroup: [(group: String, templates: [RoleTemplate])] {
+        let all = roleTemplates
+        let grouped = Dictionary(grouping: all, by: \.group)
+        let order = all.map(\.group).reduce(into: [String]()) { if !$0.contains($1) { $0.append($1) } }
+        return order.map { ($0, grouped[$0] ?? []) }
+    }
+
     func toggle(_ web: WebApp) {
         if selectedWebApps.contains(web.id) { selectedWebApps.remove(web.id) }
         else { selectedWebApps.insert(web.id) }

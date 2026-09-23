@@ -10,8 +10,11 @@ struct Catalog: Codable {
     let systemDefaults: [DefaultTweak]
     /// Optional so an older catalog.json still decodes.
     let webApps: [WebApp]?
+    /// Optional so an older catalog.json still decodes.
+    let roleTemplates: [RoleTemplate]?
 
     var webAppList: [WebApp] { webApps ?? [] }
+    var roleTemplateList: [RoleTemplate] { roleTemplates ?? [] }
 }
 
 struct AppCategory: Codable, Identifiable, Hashable {

@@ -53,7 +53,7 @@ xcrun stapler staple build/MacSetup.app
 
 Launch it, filter the catalogue, tick what you want, press **Install**.
 
-- **Sidebar** — 14 categories, plus Quick Picks that select whole tags at once
+- **Sidebar** — 15 categories, plus Quick Picks that select whole tags at once
   (Essentials, Business Baseline, Free & Open Source) and your saved profiles.
 - **Filters** — free-text search across name/vendor/description, tag chips,
   license, install source, "hide what's already installed", and sorting.
@@ -65,6 +65,22 @@ Launch it, filter the catalogue, tick what you want, press **Install**.
 - **Updates** — what is installed, what is newer, and where that came from.
 - **System Tweaks** — 18 reversible `defaults` settings, each showing its exact
   command and how to undo it.
+- **Role Templates** — 11 pre-filled starting selections for a job role or a
+  way people use a Mac (see below).
+
+### Role Templates
+
+Eleven bundled starting points — seven for a business or startup (**IT, Dev,
+DevOps, HR, Recruiting, Marketing, Customer Service**) and four for a personal
+Mac (**Gamer, Student, Creator / Freelancer, Everyday Consumer**). Each one is
+a curated set of apps, web apps and tweaks pulled straight from the catalogue
+— **Apply** replaces the current selection, and **Apply & Save…** turns it
+into your own profile in the same step, so you can trim it to your actual
+stack before rolling it out.
+
+Templates are just data (`roleTemplates` in `catalog.json`, the same shape as
+a saved profile), so adding one — or forking these for your own org — is a
+JSON edit, not a code change.
 
 ### AI & Assistants
 
@@ -105,6 +121,14 @@ administered machines: **Cloudflare WARP** (also the Zero Trust client),
 **OpenVPN Connect**, **Tunnelblick** and **Viscosity** for custom profiles, the
 `wireguard-tools` and `openvpn` command line tools, and **Tailscale**, which
 moved here from Security.
+
+### Gaming
+
+The storefronts and launchers people actually install: **Steam**, **Epic Games
+Launcher**, **Battle.net**, **GOG Galaxy**, the open-source **Heroic Games
+Launcher** (for an Epic or GOG library without either vendor's own client),
+and **Minecraft**. Discord and OBS Studio carry the `gaming` tag too, so the
+chip pulls in voice chat and stream recording alongside the launchers.
 
 ### Web apps
 
@@ -249,7 +273,7 @@ an asset is matched by filename pattern — so you always get the current versio
 |---|---:|---|
 | Direct from vendor | 41 | `curl` the vendor's own URL, then mount/expand/install |
 | GitHub release | 12 | Resolve the latest release asset, then as above |
-| Homebrew | 107 | `brew install [--cask]`, for apps with no stable direct link |
+| Homebrew | 115 | `brew install [--cask]`, for apps with no stable direct link |
 | Vendor script | 3 | The maker's own documented install script |
 
 42 entries also carry a **Homebrew fallback**: if the vendor
@@ -403,7 +427,7 @@ password prompt. So the scheduled run:
 * **skips anything needing an administrator** (`.pkg` installers and the
   privileged Homebrew casks) and reports them instead.
 
-That still covers **125 of the 163** apps, which install with no password at all.
+That still covers **133 of the 171** apps, which install with no password at all.
 The remainder are listed in a notification so you can approve them in one batch
 next time you open MacSetup.
 
@@ -630,8 +654,8 @@ selection on your specific macOS build.
 
 ## Maintaining the catalogue
 
-`Sources/MacSetup/Resources/catalog.json` is the whole dataset — 163 apps, 14
-categories, 44 web apps, 18 tweaks. It's also copied into the built bundle at
+`Sources/MacSetup/Resources/catalog.json` is the whole dataset — 171 apps, 15
+categories, 44 web apps, 18 tweaks, 11 role templates. It's also copied into the built bundle at
 `MacSetup.app/Contents/Resources/catalog.json`, so you can edit a URL in a
 deployed copy without rebuilding.
 

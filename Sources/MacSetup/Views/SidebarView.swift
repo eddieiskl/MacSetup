@@ -30,6 +30,8 @@ struct SidebarView: View {
                 updatesRow
                 row(.tweaks, "System Tweaks", "slider.horizontal.3",
                     count: state.catalog?.systemDefaults.count ?? 0)
+                row(.roleTemplates, "Role Templates", "person.text.rectangle",
+                    count: state.roleTemplates.count)
                 row(.selection, "Review Selection", "checklist",
                     count: state.selectedApps.count + state.selectedTweaks.count + state.selectedWebApps.count,
                     highlight: state.hasSelection)

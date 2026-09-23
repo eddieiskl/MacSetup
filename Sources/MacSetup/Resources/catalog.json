@@ -69,22 +69,28 @@
    "order": 11
   },
   {
+   "id": "gaming",
+   "name": "Gaming",
+   "symbol": "gamecontroller",
+   "order": 12
+  },
+  {
    "id": "design",
    "name": "Design & Creative",
    "symbol": "paintbrush",
-   "order": 12
+   "order": 13
   },
   {
    "id": "utilities",
    "name": "Utilities",
    "symbol": "wrench.and.screwdriver",
-   "order": 13
+   "order": 14
   },
   {
    "id": "virtualization",
    "name": "Virtualization",
    "symbol": "cube.box",
-   "order": 14
+   "order": 15
   }
  ],
  "apps": [
@@ -1395,7 +1401,8 @@
    "bundleId": "com.hnc.Discord",
    "teamId": "53Q6R32WPB",
    "tags": [
-    "popular"
+    "popular",
+    "gaming"
    ],
    "license": "freemium",
    "source": {
@@ -1751,6 +1758,29 @@
    "fallback": {
     "kind": "brew",
     "cask": "sketch"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "canva",
+   "name": "Canva",
+   "category": "design",
+   "vendor": "Canva",
+   "summary": "Drag-and-drop design for social posts, presentations and print.",
+   "homepage": "https://www.canva.com/",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "popular",
+    "student"
+   ],
+   "license": "freemium",
+   "source": {
+    "kind": "brew",
+    "cask": "canva"
    },
    "icon": null,
    "selfUpdates": null,
@@ -2256,7 +2286,8 @@
    "tags": [
     "open-source",
     "free",
-    "popular"
+    "popular",
+    "gaming"
    ],
    "license": "open-source",
    "source": {
@@ -2338,6 +2369,146 @@
    },
    "icon": null,
    "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "battle-net",
+   "name": "Battle.net",
+   "category": "gaming",
+   "vendor": "Blizzard Entertainment",
+   "summary": "Blizzard's launcher for World of Warcraft, Diablo, Overwatch and more.",
+   "homepage": "https://www.battle.net/",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "popular",
+    "gaming"
+   ],
+   "license": "freeware",
+   "source": {
+    "kind": "brew",
+    "cask": "battle-net"
+   },
+   "icon": null,
+   "selfUpdates": "its own updater",
+   "needsAdmin": true,
+   "caskInstaller": true
+  },
+  {
+   "id": "epic-games",
+   "name": "Epic Games Launcher",
+   "category": "gaming",
+   "vendor": "Epic Games",
+   "summary": "Epic's game store and launcher, home to Fortnite and free weekly titles.",
+   "homepage": "https://www.epicgames.com/",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "popular",
+    "gaming"
+   ],
+   "license": "freeware",
+   "source": {
+    "kind": "brew",
+    "cask": "epic-games"
+   },
+   "icon": null,
+   "selfUpdates": "its own updater",
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "gog-galaxy",
+   "name": "GOG Galaxy",
+   "category": "gaming",
+   "vendor": "GOG.com",
+   "summary": "DRM-free game library and launcher.",
+   "homepage": "https://www.gog.com/galaxy",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "gaming"
+   ],
+   "license": "freeware",
+   "source": {
+    "kind": "brew",
+    "cask": "gog-galaxy"
+   },
+   "icon": null,
+   "selfUpdates": "its own updater",
+   "needsAdmin": true,
+   "caskInstaller": null
+  },
+  {
+   "id": "heroic",
+   "name": "Heroic Games Launcher",
+   "category": "gaming",
+   "vendor": "Heroic Games Launcher community",
+   "summary": "Open-source launcher for Epic and GOG libraries, without their native clients.",
+   "homepage": "https://heroicgameslauncher.com/",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "open-source",
+    "free",
+    "gaming"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "cask": "heroic"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "minecraft",
+   "name": "Minecraft",
+   "category": "gaming",
+   "vendor": "Mojang Studios",
+   "summary": "The official Minecraft launcher.",
+   "homepage": "https://minecraft.net/",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "popular",
+    "gaming",
+    "student"
+   ],
+   "license": "freemium",
+   "source": {
+    "kind": "brew",
+    "cask": "minecraft"
+   },
+   "icon": null,
+   "selfUpdates": "its own updater",
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
+   "id": "steam",
+   "name": "Steam",
+   "category": "gaming",
+   "vendor": "Valve Corporation",
+   "summary": "PC gaming's largest storefront and library manager.",
+   "homepage": "https://store.steampowered.com/about/",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "essential",
+    "popular",
+    "gaming"
+   ],
+   "license": "freeware",
+   "source": {
+    "kind": "brew",
+    "cask": "steam"
+   },
+   "icon": null,
+   "selfUpdates": "its own updater",
    "needsAdmin": null,
    "caskInstaller": null
   },
@@ -2710,6 +2881,30 @@
    "caskInstaller": null
   },
   {
+   "id": "anki",
+   "name": "Anki",
+   "category": "productivity",
+   "vendor": "Ankitects",
+   "summary": "Spaced-repetition flashcards for memorising anything.",
+   "homepage": "https://apps.ankiweb.net/",
+   "bundleId": null,
+   "teamId": null,
+   "tags": [
+    "open-source",
+    "free",
+    "student"
+   ],
+   "license": "open-source",
+   "source": {
+    "kind": "brew",
+    "cask": "anki"
+   },
+   "icon": null,
+   "selfUpdates": null,
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
    "id": "zotero",
    "name": "Zotero",
    "category": "productivity",
@@ -2720,7 +2915,8 @@
    "teamId": "8LAYR367YV",
    "tags": [
     "open-source",
-    "free"
+    "free",
+    "student"
    ],
    "license": "open-source",
    "source": {
@@ -4491,7 +4687,7 @@
    "icon": "https://static.figma.com/app/icon/1/favicon.png"
   },
   {
-   "id": "canva",
+   "id": "canva-web",
    "name": "Canva",
    "group": "Work & Projects",
    "url": "https://www.canva.com/",
@@ -4601,6 +4797,297 @@
    "url": "https://www.netflix.com/",
    "summary": "Netflix.",
    "icon": null
+  }
+ ],
+ "roleTemplates": [
+  {
+   "id": "it",
+   "name": "IT",
+   "group": "Enterprise",
+   "symbol": "wrench.and.screwdriver.fill",
+   "summary": "Fleet management, remote support and endpoint security for a new IT admin machine.",
+   "appIDs": [
+    "intune-company-portal",
+    "microsoft-defender",
+    "munki",
+    "nudge",
+    "teamviewer",
+    "anydesk",
+    "1password",
+    "malwarebytes",
+    "wireshark",
+    "angry-ip-scanner",
+    "the-unarchiver",
+    "appcleaner",
+    "stats"
+   ],
+   "tweakIDs": [
+    "finder-show-extensions",
+    "finder-show-hidden",
+    "finder-path-bar",
+    "save-to-disk-default"
+   ],
+   "webAppIDs": [
+    "m365-admin",
+    "intune-admin",
+    "entra-admin"
+   ]
+  },
+  {
+   "id": "dev",
+   "name": "Dev",
+   "group": "Enterprise",
+   "symbol": "hammer.fill",
+   "summary": "Editor, terminal, containers and the version control basics for a new engineer.",
+   "appIDs": [
+    "visual-studio-code",
+    "cursor",
+    "iterm2",
+    "docker-desktop",
+    "github-desktop",
+    "git",
+    "node",
+    "python",
+    "go",
+    "homebrew",
+    "postman",
+    "claude-code",
+    "raycast",
+    "rectangle",
+    "orbstack"
+   ],
+   "tweakIDs": [
+    "finder-show-extensions",
+    "keyboard-fast-repeat",
+    "dock-minimize-to-icon"
+   ],
+   "webAppIDs": [
+    "github-web",
+    "vercel",
+    "cloudflare"
+   ]
+  },
+  {
+   "id": "devops",
+   "name": "DevOps",
+   "group": "Enterprise",
+   "symbol": "server.rack",
+   "summary": "Containers, cloud CLIs and network tooling for infrastructure and platform work.",
+   "appIDs": [
+    "docker-desktop",
+    "orbstack",
+    "multipass",
+    "iterm2",
+    "git",
+    "gh",
+    "wireshark",
+    "tailscale",
+    "cloudflare-warp",
+    "azure-cli",
+    "homebrew",
+    "jq"
+   ],
+   "tweakIDs": [
+    "finder-show-extensions"
+   ],
+   "webAppIDs": [
+    "aws-console",
+    "azure-portal",
+    "cloudflare",
+    "github-web"
+   ]
+  },
+  {
+   "id": "hr",
+   "name": "HR",
+   "group": "Enterprise",
+   "symbol": "person.2.fill",
+   "summary": "Office suite, meetings and messaging for people operations.",
+   "appIDs": [
+    "microsoft-word",
+    "microsoft-excel",
+    "microsoft-outlook",
+    "microsoft-teams",
+    "slack",
+    "zoom",
+    "1password",
+    "notion"
+   ],
+   "tweakIDs": [],
+   "webAppIDs": [
+    "gmail",
+    "google-calendar",
+    "outlook-web",
+    "teams-web"
+   ]
+  },
+  {
+   "id": "recruiting",
+   "name": "Recruiting",
+   "group": "Enterprise",
+   "symbol": "person.badge.plus",
+   "summary": "Calls, calendars and notes for a recruiter running back-to-back interviews.",
+   "appIDs": [
+    "microsoft-outlook",
+    "microsoft-teams",
+    "zoom",
+    "slack",
+    "notion",
+    "1password"
+   ],
+   "tweakIDs": [],
+   "webAppIDs": [
+    "gmail",
+    "google-calendar",
+    "outlook-web"
+   ]
+  },
+  {
+   "id": "marketing",
+   "name": "Marketing",
+   "group": "Enterprise",
+   "symbol": "megaphone.fill",
+   "summary": "Design, presentation and collaboration tools for campaigns and content.",
+   "appIDs": [
+    "figma",
+    "canva",
+    "adobe-creative-cloud",
+    "notion",
+    "slack",
+    "zoom",
+    "microsoft-powerpoint",
+    "1password"
+   ],
+   "tweakIDs": [],
+   "webAppIDs": [
+    "canva-web",
+    "figma-web",
+    "miro",
+    "airtable",
+    "youtube"
+   ]
+  },
+  {
+   "id": "customer-service",
+   "name": "Customer Service",
+   "group": "Enterprise",
+   "symbol": "headphones",
+   "summary": "Messaging and meetings for a support seat, kept light on purpose.",
+   "appIDs": [
+    "slack",
+    "zoom",
+    "microsoft-teams",
+    "1password",
+    "notion",
+    "the-unarchiver"
+   ],
+   "tweakIDs": [],
+   "webAppIDs": [
+    "gmail",
+    "teams-web"
+   ]
+  },
+  {
+   "id": "gamer",
+   "name": "Gamer",
+   "group": "Consumer",
+   "symbol": "gamecontroller.fill",
+   "summary": "The storefronts, voice chat and streaming tools most PC gamers install first.",
+   "appIDs": [
+    "steam",
+    "epic-games",
+    "battle-net",
+    "gog-galaxy",
+    "heroic",
+    "minecraft",
+    "discord",
+    "obs",
+    "spotify"
+   ],
+   "tweakIDs": [
+    "dock-autohide-fast"
+   ],
+   "webAppIDs": [
+    "youtube"
+   ]
+  },
+  {
+   "id": "student",
+   "name": "Student",
+   "group": "Consumer",
+   "symbol": "graduationcap.fill",
+   "summary": "Note-taking, citations and flashcards for coursework, plus the essentials.",
+   "appIDs": [
+    "microsoft-office",
+    "anki",
+    "zotero",
+    "notion",
+    "canva",
+    "google-chrome",
+    "the-unarchiver",
+    "rectangle",
+    "1password"
+   ],
+   "tweakIDs": [
+    "finder-show-extensions"
+   ],
+   "webAppIDs": [
+    "google-docs",
+    "google-drive-web",
+    "gmail",
+    "google-calendar",
+    "youtube"
+   ]
+  },
+  {
+   "id": "creator",
+   "name": "Creator / Freelancer",
+   "group": "Consumer",
+   "symbol": "video.fill",
+   "summary": "Design, recording and editing tools for freelance and content work.",
+   "appIDs": [
+    "figma",
+    "canva",
+    "adobe-creative-cloud",
+    "obs",
+    "audacity",
+    "handbrake",
+    "blender",
+    "dropbox",
+    "1password",
+    "notion"
+   ],
+   "tweakIDs": [],
+   "webAppIDs": [
+    "youtube",
+    "canva-web",
+    "figma-web"
+   ]
+  },
+  {
+   "id": "everyday-consumer",
+   "name": "Everyday Consumer",
+   "group": "Consumer",
+   "symbol": "house.fill",
+   "summary": "A sane baseline for a family or personal Mac: chat, media, and basic security.",
+   "appIDs": [
+    "google-chrome",
+    "whatsapp",
+    "signal",
+    "spotify",
+    "vlc",
+    "malwarebytes",
+    "bitwarden",
+    "the-unarchiver",
+    "appcleaner",
+    "dropbox"
+   ],
+   "tweakIDs": [],
+   "webAppIDs": [
+    "gmail",
+    "youtube",
+    "netflix"
+   ]
   }
  ]
 }

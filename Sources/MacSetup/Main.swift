@@ -763,6 +763,21 @@ enum Entry {
             check("clearing removes the entry",
                   GitHubTagCache.get(cacheTestKey) == nil)
 
+            // Role templates are just a Profile in different clothes — asProfile
+            // must actually carry every field over, or "Apply" would silently
+            // select fewer apps than the template promises.
+            if let template = (try? CatalogLoader.load())?.roleTemplateList.first {
+                let p = template.asProfile
+                check("a role template's app selection survives asProfile",
+                      Set(p.appIDs) == Set(template.appIDs))
+                check("a role template's tweak selection survives asProfile",
+                      Set(p.tweakIDs) == Set(template.tweakIDs))
+                check("a role template's web app selection survives asProfile",
+                      Set(p.webAppIDs) == Set(template.webAppIDs))
+                check("a role template's name carries over so a saved copy is recognisable",
+                      p.name == template.name)
+            }
+
             check("no cached installer is claimed when none matches",
                   OSInstallerCache.cached().isEmpty
                   ? OSInstallerCache.cached(matching: tahoe) == nil

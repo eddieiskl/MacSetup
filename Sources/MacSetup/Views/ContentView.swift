@@ -8,6 +8,7 @@ enum Pane: Hashable {
     case updates
     case tweaks
     case selection
+    case roleTemplates
 }
 
 struct ContentView: View {
@@ -81,6 +82,8 @@ struct ContentView: View {
                 TweaksView()
             case .selection:
                 SelectionReview()
+            case .roleTemplates:
+                RoleTemplatesView(showSaveProfile: $showSaveProfile)
             default:
                 CatalogView()
             }

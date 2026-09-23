@@ -112,11 +112,29 @@ for w in web:
 for t in c['systemDefaults']:
     for f in ('command','revert','group','name','detail'):
         if not t.get(f): errs.append(f"{t['id']}: missing {f}")
+
+# Role templates are just an appIDs/tweakIDs/webAppIDs list pointing back into
+# the catalogue, so a typo here silently applies fewer apps than the template
+# claims — nothing else would catch that.
+tweak_ids = {t['id'] for t in c['systemDefaults']}
+tids = [t['id'] for t in c.get('roleTemplates', [])]
+if len(set(tids)) != len(tids):
+    errs.append(f"duplicate role template ids: {[i for i in set(tids) if tids.count(i)>1]}")
+for t in c.get('roleTemplates', []):
+    for f in ('name','group','symbol','summary'):
+        if not t.get(f): errs.append(f"{t['id']}: missing {f}")
+    if not t.get('appIDs'): errs.append(f"{t['id']}: no apps")
+    for a in t.get('appIDs', []):
+        if a not in set(ids): errs.append(f"{t['id']}: unknown app {a}")
+    for tw in t.get('tweakIDs', []):
+        if tw not in tweak_ids: errs.append(f"{t['id']}: unknown tweak {tw}")
+    for wid in t.get('webAppIDs', []):
+        if wid not in set(wids): errs.append(f"{t['id']}: unknown web app {wid}")
 print("\n".join(errs) if errs else "CLEAN")
-print(f"COUNTS {len(c['apps'])} {len(web)} {len(c['systemDefaults'])} {len(c['categories'])}")
+print(f"COUNTS {len(c['apps'])} {len(web)} {len(c['systemDefaults'])} {len(c['categories'])} {len(c.get('roleTemplates', []))}")
 PY
 if grep -q '^CLEAN' /tmp/st-cat.txt; then
-  ok "schema and references valid ($(grep '^COUNTS' /tmp/st-cat.txt | awk '{print $2" apps, "$3" web apps, "$4" tweaks, "$5" categories"}'))"
+  ok "schema and references valid ($(grep '^COUNTS' /tmp/st-cat.txt | awk '{print $2" apps, "$3" web apps, "$4" tweaks, "$5" categories, "$6" role templates"}'))"
 else
   bad "schema and references valid" "$(grep -v '^COUNTS' /tmp/st-cat.txt | head -5)"
 fi
