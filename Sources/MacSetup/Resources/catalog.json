@@ -336,6 +336,34 @@
    "caskInstaller": null
   },
   {
+   "id": "microsoft-copilot",
+   "name": "Microsoft Copilot",
+   "category": "ai",
+   "vendor": "Microsoft",
+   "summary": "Microsoft's AI assistant as a standalone desktop app, built on the Edge framework.",
+   "homepage": "https://www.microsoft.com/en-us/microsoft-365-copilot/download-copilot-app",
+   "bundleId": "com.microsoft.m365copilot",
+   "teamId": "UBF8T346G9",
+   "tags": [
+    "ai",
+    "microsoft"
+   ],
+   "license": "freemium",
+   "source": {
+    "kind": "direct",
+    "format": "pkg",
+    "url": "https://go.microsoft.com/fwlink/?linkid=2325114"
+   },
+   "fallback": {
+    "kind": "brew",
+    "cask": "microsoft-365-copilot"
+   },
+   "icon": "none",
+   "selfUpdates": "its own updater",
+   "needsAdmin": null,
+   "caskInstaller": null
+  },
+  {
    "id": "msty",
    "name": "Msty",
    "category": "ai",

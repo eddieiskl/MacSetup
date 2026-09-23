@@ -68,12 +68,12 @@ Launch it, filter the catalogue, tick what you want, press **Install**.
 
 ### AI & Assistants
 
-A dedicated category covers the assistants people now install first: **Claude**
-and **ChatGPT** (both direct from the vendor, both with Team IDs verified
-against real installs), **Ollama**, **LM Studio**, **Jan**, **GPT4All**,
-**AnythingLLM**, **Msty**, **Cherry Studio** and **Witsy** for local or
-bring-your-own-key models, **Perplexity**, **Elephas**, **MacWhisper**,
-**superwhisper** and **DiffusionBee**.
+A dedicated category covers the assistants people now install first: **Claude**,
+**ChatGPT** and **Microsoft Copilot** (all direct from the vendor, all with
+Team IDs verified against real installs), **Ollama**, **LM Studio**, **Jan**,
+**GPT4All**, **AnythingLLM**, **Msty**, **Cherry Studio** and **Witsy** for
+local or bring-your-own-key models, **Perplexity**, **Elephas**,
+**MacWhisper**, **superwhisper** and **DiffusionBee**.
 
 Command-line AI tools (`aider`, `llm`, `gemini-cli`) live under Terminal & CLI,
 and everything AI-related — including Cursor and Claude Code — carries the `ai`
@@ -90,7 +90,7 @@ package, so they are always the latest build.
 For managed fleets there is **Intune Company Portal** (the enrolment starting
 point), **Microsoft Defender**, and **Microsoft AutoUpdate**, plus
 **PowerShell**, **Azure CLI**, **.NET SDK** and **Azure Data Studio**. Together
-with Edge, Teams, OneDrive and Windows App, 18 entries carry the `microsoft`
+with Edge, Teams, OneDrive, Windows App and Copilot, 19 entries carry the `microsoft`
 tag, so one chip selects the lot.
 
 > Skype has no entry: its download link now redirects to a support page, and
@@ -247,7 +247,7 @@ an asset is matched by filename pattern — so you always get the current versio
 
 | Source | Count | What happens |
 |---|---:|---|
-| Direct from vendor | 40 | `curl` the vendor's own URL, then mount/expand/install |
+| Direct from vendor | 41 | `curl` the vendor's own URL, then mount/expand/install |
 | GitHub release | 12 | Resolve the latest release asset, then as above |
 | Homebrew | 107 | `brew install [--cask]`, for apps with no stable direct link |
 | Vendor script | 3 | The maker's own documented install script |
@@ -403,7 +403,7 @@ password prompt. So the scheduled run:
 * **skips anything needing an administrator** (`.pkg` installers and the
   privileged Homebrew casks) and reports them instead.
 
-That still covers **125 of the 162** apps, which install with no password at all.
+That still covers **125 of the 163** apps, which install with no password at all.
 The remainder are listed in a notification so you can approve them in one batch
 next time you open MacSetup.
 
@@ -630,7 +630,7 @@ selection on your specific macOS build.
 
 ## Maintaining the catalogue
 
-`Sources/MacSetup/Resources/catalog.json` is the whole dataset — 162 apps, 14
+`Sources/MacSetup/Resources/catalog.json` is the whole dataset — 163 apps, 14
 categories, 44 web apps, 18 tweaks. It's also copied into the built bundle at
 `MacSetup.app/Contents/Resources/catalog.json`, so you can edit a URL in a
 deployed copy without rebuilding.
@@ -668,14 +668,16 @@ asset **filename**, not the full URL.
 - **Web apps are launchers, not real PWAs.** They have no separate storage or
   push notifications — they share the browser's profile. That is deliberate: it
   is what keeps SSO working. Deleting the .app removes it completely.
-- **Team IDs are only partly verified.** 11 were confirmed against apps installed
-  on the build machine (including Claude and ChatGPT); the rest are unverified, which is why a mismatch warns
+- **Team IDs are only partly verified.** 12 were confirmed against apps installed
+  on the build machine or against the signed installer itself (including Claude,
+  ChatGPT and Copilot); the rest are unverified, which is why a mismatch warns
   rather than fails by default. `verify-catalog.sh teamids` confirms more as you
   install more.
-- **GitHub's API allows 60 unauthenticated calls/hour.** A run with many GitHub
-  apps can hit that; those entries fall back to Homebrew.
-- **Microsoft Copilot has no catalogue entry** — Homebrew's `copilot` cask is an
-  unrelated budgeting app, and there is no unattended installer for the real one.
+- **GitHub's API allows 60 unauthenticated calls/hour.** Update checks mostly
+  avoid it — releases are resolved from the HTML pages, not the API, and
+  resolved tags are cached for 6 hours so a repeat check doesn't re-walk GitHub
+  at all — but the JSON API is still used as a fallback when that resolution
+  fails, and a run with many uncached GitHub apps can still hit it.
 - **VMware Fusion was dropped** — Broadcom now requires a login, and the
   Homebrew cask no longer exists, so it can't be installed unattended.
 - **macOS releases cannot be installed by MacSetup.** Apple Silicon requires a
