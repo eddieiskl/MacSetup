@@ -1,12 +1,33 @@
 # MacSetup
 
-Provision a new Mac from a curated catalogue. Pick apps by category, hit install,
-and watch a generated bash script pull each one **straight from the vendor's own
-servers** with live per-app status.
+**A native macOS provisioning tool for turning a repeatable app selection into an inspectable installation workflow.**
 
-Built for the "I just got handed a new Mac" problem — personal or fleet.
+Choose applications, review the generated script, and follow per-app installation status. Save the selection as a profile for the next Mac. Built around the practical IT task of preparing a machine for someone to use.
 
----
+![MacSetup application selection components](docs/images/app-cards.png)
+
+*Actual SwiftUI components rendered by the app's built-in preview command. This is a component preview, not a screenshot of the complete window.*
+
+## Start here
+
+- [Build the app](#build) from Swift source for macOS 14 or newer.
+- [Try the walkthrough](docs/portfolio-demo.md) without running an installation.
+- [Understand distribution and signing](#sharing-it-with-someone-else).
+- [Inspect the validation tools](#validating-that-it-works).
+
+## Why this project
+
+| IT task | MacSetup approach |
+| --- | --- |
+| Repeat a standard application setup | Named profiles with JSON import and export |
+| Understand what a tool will execute | Script preview before installation |
+| Handle mixed application sources | Vendor downloads, GitHub releases, and optional Homebrew paths |
+| Explain update decisions | Report the detected version and its source; surface uncertainty |
+| Fit into existing operations | Export scripts and profiles for runbooks or managed workflows |
+
+**Stack:** Swift · SwiftUI · Bash · JSON catalogue · macOS command-line tools
+
+The app is currently ad-hoc signed. Broad distribution requires Developer ID signing and notarization. Signature mismatches warn by default; strict verification is an explicit option. See the detailed behavior and limits below.
 
 ## Build
 
