@@ -716,6 +716,29 @@ enum Entry {
                       helper.contains("MacSetup never sees it"))
             }
 
+            // Regression: the installer walked back to a release with a Mac
+            // asset, but the update checker did not — so Obsidian was offered
+            // an Android-only 1.13.8 that would have installed 1.13.7 and
+            // reported the same update forever.
+            let checkerSrc = (try? String(contentsOfFile: "Sources/MacSetup/Install/UpdateChecker.swift",
+                                          encoding: .utf8)) ?? ""
+            if !checkerSrc.isEmpty {
+                check("the update checker resolves against the asset pattern",
+                      checkerSrc.contains("githubLatestTag(repo, matching: app.source.assetPattern)"))
+                check("the checker walks back through recent tags",
+                      checkerSrc.contains("recentTags") && checkerSrc.contains("releaseHasAsset"))
+                check("no installable asset means no update, not a false one",
+                      checkerSrc.contains("nothing installable: better silent than a false update"))
+            }
+            let viewSrc = (try? String(contentsOfFile: "Sources/MacSetup/Views/UpdatesView.swift",
+                                       encoding: .utf8)) ?? ""
+            if !viewSrc.isEmpty {
+                check("the macOS row offers buttons, not a secretly clickable row",
+                      viewSrc.contains("Upgrade Now…") && viewSrc.contains("Software Update…"))
+                check("the selection count ignores what cannot be selected",
+                      viewSrc.contains("let selectable = system.updates.filter { !$0.isSystemRelease }"))
+            }
+
             check("no cached installer is claimed when none matches",
                   OSInstallerCache.cached().isEmpty
                   ? OSInstallerCache.cached(matching: tahoe) == nil

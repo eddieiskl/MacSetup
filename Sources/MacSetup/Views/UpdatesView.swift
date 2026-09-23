@@ -265,6 +265,11 @@ struct UpdatesView: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             HStack(spacing: 10) {
+                // Hidden once the installer is on disk: offering to download
+                // something directly above a line saying it is downloaded is
+                // just confusing.
+                let osReady = system.updates.first(where: \.isSystemRelease)
+                    .flatMap { OSInstallerCache.cached(matching: $0) } != nil
                 Button {
                     cacheMessage = "Starting the download…"
                     Task { await cacheInstaller() }
@@ -272,6 +277,9 @@ struct UpdatesView: View {
                     Label("Download the macOS installer now", systemImage: "arrow.down.circle")
                 }
                 .disabled(caching || !system.updates.contains(where: \.isSystemRelease))
+                .opacity(osReady ? 0 : 1)
+                .frame(width: osReady ? 0 : nil, height: osReady ? 0 : nil)
+                .clipped()
                 .help("Fetches the full installer ahead of time, so updating later is quick")
                 if let cacheMessage {
                     Text(cacheMessage).font(.system(size: 11)).foregroundStyle(.secondary)
@@ -447,8 +455,12 @@ struct UpdatesView: View {
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(.secondary).textCase(.uppercase)
                     Spacer()
-                    if !system.updates.isEmpty {
-                        Text("\(state.selectedSystemUpdates.count) of \(system.updates.count)")
+                    // Count only what can actually be ticked. Including the
+                    // macOS release made it read "0 of 1" next to a Select All
+                    // that could never reach 1.
+                    let selectable = system.updates.filter { !$0.isSystemRelease }
+                    if !selectable.isEmpty {
+                        Text("\(state.selectedSystemUpdates.count) of \(selectable.count)")
                             .font(.caption).foregroundStyle(.secondary)
                         Button("Select All") {
                             // Never a macOS release: selecting one would queue

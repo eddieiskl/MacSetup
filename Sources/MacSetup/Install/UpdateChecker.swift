@@ -118,7 +118,8 @@ final class UpdateChecker: ObservableObject {
                 latest = v; via = "Homebrew"
             }
         case .github:
-            if let repo = app.source.repo, let tag = await Self.githubLatestTag(repo) {
+            if let repo = app.source.repo,
+               let tag = await Self.githubLatestTag(repo, matching: app.source.assetPattern) {
                 latest = tag; via = "GitHub release"
             }
         case .direct:
@@ -195,6 +196,62 @@ final class UpdateChecker: ObservableObject {
     /// `/releases/latest` redirects to `/releases/tag/<tag>`, which needs no API
     /// call and is not subject to the 60-per-hour unauthenticated rate limit.
     /// The JSON API is kept only as a fallback.
+    /// The newest release that actually has an asset this Mac can install.
+    ///
+    /// Reporting the newest *tag* is wrong for any repository that ships more
+    /// than one platform. Obsidian publishes Android builds to the same repo,
+    /// so its latest release carries only an .apk — and MacSetup offered an
+    /// update whose install would have produced the previous version, forever.
+    private static func githubLatestTag(_ repo: String, matching pattern: String?) async -> String? {
+        guard let pattern, !pattern.isEmpty else { return await githubLatestTag(repo) }
+
+        let newest = await githubLatestTag(repo)
+        if let newest, await releaseHasAsset(repo: repo, tag: newest, pattern: pattern) {
+            return newest
+        }
+        for tag in await recentTags(repo).prefix(8) where tag != newest {
+            if await releaseHasAsset(repo: repo, tag: tag, pattern: pattern) { return tag }
+        }
+        return nil          // nothing installable: better silent than a false update
+    }
+
+    /// Recent tags, newest first, from the releases page.
+    private static func recentTags(_ repo: String) async -> [String] {
+        guard let url = URL(string: "https://github.com/\(repo)/releases") else { return [] }
+        var req = URLRequest(url: url); req.timeoutInterval = 12
+        req.setValue("MacSetup/1.0", forHTTPHeaderField: "User-Agent")
+        guard let (data, _) = try? await URLSession.shared.data(for: req),
+              let html = String(data: data, encoding: .utf8) else { return [] }
+        let needle = "/\(repo)/releases/tag/"
+        var out: [String] = []
+        var seen = Set<String>()
+        var idx = html.startIndex
+        while let r = html.range(of: needle, range: idx..<html.endIndex) {
+            let rest = html[r.upperBound...]
+            let tag = String(rest.prefix(while: { $0 != "\"" && $0 != "?" && $0 != "#" }))
+            if !tag.isEmpty, seen.insert(tag).inserted { out.append(tag) }
+            idx = r.upperBound
+            if out.count >= 12 { break }
+        }
+        return out
+    }
+
+    private static func releaseHasAsset(repo: String, tag: String, pattern: String) async -> Bool {
+        guard let url = URL(string: "https://github.com/\(repo)/releases/expanded_assets/\(tag)")
+        else { return false }
+        var req = URLRequest(url: url); req.timeoutInterval = 12
+        req.setValue("MacSetup/1.0", forHTTPHeaderField: "User-Agent")
+        guard let (data, _) = try? await URLSession.shared.data(for: req),
+              let html = String(data: data, encoding: .utf8) else { return false }
+        guard let rx = try? NSRegularExpression(pattern: pattern) else { return false }
+        for line in html.components(separatedBy: "\"") where line.contains("/releases/download/") {
+            let name = String(line.split(separator: "/").last ?? "")
+            let range = NSRange(name.startIndex..., in: name)
+            if rx.firstMatch(in: name, range: range) != nil { return true }
+        }
+        return false
+    }
+
     private static func githubLatestTag(_ repo: String) async -> String? {
         if let url = URL(string: "https://github.com/\(repo)/releases/latest") {
             var req = URLRequest(url: url)
