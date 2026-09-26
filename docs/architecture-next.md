@@ -1,19 +1,20 @@
 # Architecture — MacSetupCore, Desired State, and what comes next
 
-This describes the first step in evolving MacSetup from a provisioning tool
-into a broader Mac lifecycle platform: a reusable core module, a Desired
-State / compliance engine, and a Doctor health-check foundation. It's written
-for whoever picks this up next — including a future MCP server, which this
-was built to make cheap rather than to build outright.
+This describes evolving MacSetup from a provisioning tool into a broader Mac
+lifecycle platform: a reusable core module, a Desired State / compliance
+engine, a Doctor health-check foundation, and a read-only MCP server on top
+of all three. It's written for whoever picks this up next — including
+whoever adds the MCP server's mutating tools, which this was built to make
+cheap rather than to build outright.
 
 ## MacSetupCore
 
 Before this change, MacSetup was one SPM executable target: the SwiftUI app
 and the CLI's argument parsing (`Main.swift`) in the same binary, calling
 straight into the same model classes. That already meant no duplication
-between the app and the CLI — they're the same process. The gap was a
-**future** MCP server or background agent, which can't link an executable
-target's code without pulling in the whole app (and, transitively, SwiftUI).
+between the app and the CLI — they're the same process. The gap was an MCP
+server or background agent, which can't link an executable target's code
+without pulling in the whole app (and, transitively, SwiftUI).
 
 `Sources/MacSetupCore` is a plain SPM library target with no SwiftUI import.
 `Sources/MacSetup` (the app + CLI) depends on it. Everything that isn't
@@ -170,33 +171,50 @@ Doctor don't loosen anything:
   equivalent in Core's public API, in Desired State, or in Doctor. Every
   capability is a specific, named function.
 
-## Toward an MCP server
+## The MCP server
 
-Not built yet — deliberately: the point of this refactor was to make it
-*cheap* once it's worth doing, not to build it speculatively. The public API
-surface this phase produced already maps directly onto the tool set an MCP
-server would expose:
+Built, as the first slice: `Sources/MacSetupMCP` is a stdio MCP server using
+the [official Swift SDK](https://github.com/modelcontextprotocol/swift-sdk)
+(`.package(url: "https://github.com/modelcontextprotocol/swift-sdk.git",
+from: "0.12.1")` — depended on rather than hand-rolled, so the JSON-RPC/stdio
+framing is exactly what real MCP clients expect). It depends only on
+`MacSetupCore`; it does not link `MacSetup` or SwiftUI at all, which is the
+entire point of the module split above.
 
-| Future MCP tool | Backed by (MacSetupCore) |
-| --- | --- |
-| `get_system_info` | `ProcessInfo` + `Arch.current` (see `MachineSummary.current()`) |
-| `get_installed_apps` | `MachineInventory.scan(catalogApps:)` |
-| `get_profiles` | `ProfileStore` |
-| `get_role_templates` | `Catalog.roleTemplateList` |
-| `compare_desired_state` | `DesiredStateComparator.compare(...)` |
-| `get_doctor_report` | `DoctorEngine.run(catalogApps:)` |
-| `search_catalog` | `Catalog.apps` filtered the way `AppState`'s own filter already does (not yet lifted into Core as a standalone helper — small, obvious follow-up) |
-| `get_updates` | `UpdateChecker.check(apps:)` |
-| `create_remediation_plan` | `RemediationPlanner.plan(from:includeRemovals:)` |
+Deliberately scoped to **read-only tools first** — proving out the boundary
+(a plan for a person to inspect, never an action an LLM can trigger directly)
+before extending it to anything that mutates the Mac:
 
-Every one of these is already `Codable`/JSON-serializable (see
-`--compare-profile --json` and `--doctor --json`) and none of them touch a
-UI type. When an MCP server is actually built, the rules above carry over
-unchanged: read tools can be non-interactive, `create_remediation_plan`
-builds a plan an operator inspects before anything runs, privileged actions
-still go through `InstallEngine`'s existing authorization, MCP clients never
-see or handle a password, and there is no generic shell-execution tool to
-expose in the first place.
+| MCP tool | Backed by (MacSetupCore) | Status |
+| --- | --- | --- |
+| `get_doctor_report` | `DoctorEngine.run(catalogApps:)` | ✅ implemented |
+| `compare_desired_state` | `DesiredStateService.compare(name:profiles:catalog:)` | ✅ implemented |
+| `get_role_templates` | `Catalog.roleTemplateList` | ✅ implemented (discovery helper for the above) |
+| `get_profiles` | `ProfileStore` | ✅ implemented (discovery helper for the above) |
+| `get_system_info` | `MachineSummary.current()` | not yet — trivial, small follow-up |
+| `get_installed_apps` | `MachineInventory.scan(catalogApps:)` | not yet — trivial, small follow-up |
+| `search_catalog` | `Catalog.apps` filtered the way `AppState`'s own filter already does (not yet lifted into Core as a standalone helper) | not yet |
+| `get_updates` | `UpdateChecker.check(apps:)` | not yet |
+| `create_remediation_plan` | `RemediationPlanner.plan(from:includeRemovals:)` | **deliberately not yet** — see below |
+
+`DesiredStateService` (new: `Sources/MacSetupCore/DesiredState/DesiredStateService.swift`)
+is the one place that resolves a name to a profile/template and gathers the
+comparator's inputs — the CLI's `--compare-profile`, the app's
+`DesiredStateEngine`, and the MCP server's `compare_desired_state` tool all
+call it, none of them duplicate it.
+
+`create_remediation_plan` and anything that would actually call
+`InstallEngine` are the next step, not this one — deliberately, so the
+read/write boundary gets proven out with real read tools before anything
+that could change the Mac is reachable from an MCP client at all. When that
+lands: a plan is data an operator (human or client-side logic) inspects, not
+something the tool executes; turning an approved plan into a run still goes
+through `InstallEngine`'s existing single-batched-prompt authorization,
+unchanged; and there is still no generic shell-execution tool, and none is
+planned. Every type these tools return is already `Codable`/JSON-serializable
+(see `--compare-profile --json` and `--doctor --json`, which exercise the
+same `DesiredStateReport`/`DoctorReport` the MCP tools return) and none of
+them touch a UI type.
 
 ## What's intentionally still manual
 

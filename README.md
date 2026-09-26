@@ -35,14 +35,47 @@ The reusable logic — catalogue, profiles, installing, update checking, script
 generation, Desired State, Doctor — lives in a separate library target,
 **MacSetupCore** (`Sources/MacSetupCore`), with no SwiftUI dependency. The
 `MacSetup` executable (`Sources/MacSetup`) is the SwiftUI app plus the CLI's
-argument parsing in `Main.swift`, both built on top of it. That split exists
-so a future MCP server or background agent can call the same logic the app
-and CLI already use, without duplicating it or linking the UI.
+argument parsing in `Main.swift`, both built on top of it. **MacSetupMCP**
+(`Sources/MacSetupMCP`) is a third consumer — an MCP server exposing
+read-only tools over the same Core, with no UI and no duplicated logic (see
+below).
 
 See [docs/architecture-next.md](docs/architecture-next.md) for the module
 map, how a Desired State comparison and a remediation plan actually flow
-through the system, and the trust boundaries any future MCP integration has
-to respect.
+through the system, and the trust boundaries the MCP server respects.
+
+### MCP server
+
+`MacSetupMCP` is a stdio MCP server (via the [official Swift
+SDK](https://github.com/modelcontextprotocol/swift-sdk)) exposing four
+read-only tools — nothing it exposes installs, updates, changes a setting, or
+removes anything:
+
+- `get_doctor_report` — run Doctor's health checks.
+- `compare_desired_state` — compare a named profile or Role Template against
+  this Mac.
+- `get_role_templates` / `get_profiles` — discover valid names for the above.
+
+Build and point an MCP client (Claude Desktop, Claude Code, etc.) at the
+binary:
+
+```bash
+swift build -c release --product MacSetupMCP
+```
+
+```json
+{
+  "mcpServers": {
+    "macsetup": {
+      "command": "/path/to/MacSetup/.build/release/MacSetupMCP"
+    }
+  }
+}
+```
+
+Mutating tools (`create_remediation_plan` and anything that actually installs
+or removes) are a deliberate follow-up, not implemented yet — see
+docs/architecture-next.md for why and what changes when they land.
 
 ## Build
 
@@ -339,7 +372,7 @@ bash setup.sh
 ```
 
 Desired State and Doctor are available from the command line too, both with
-a `--json` mode meant for automation (or a future MCP server) rather than a
+a `--json` mode meant for automation (or the MCP server, above) rather than a
 person reading a terminal:
 
 ```bash

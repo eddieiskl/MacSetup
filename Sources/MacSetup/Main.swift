@@ -1692,12 +1692,12 @@ enum Entry {
                 final class Flag { var done = false }
                 let flag = Flag()
                 Task { @MainActor in
-                    guard let (desired, source) = resolveDesiredState(named: name, catalog: cat) else {
+                    guard let report = await DesiredStateService.compare(
+                        name: name, profiles: ProfileStore().profiles, catalog: cat) else {
                         FileHandle.standardError.write(Data(
                             "no saved profile or role template named '\(name)'\n".utf8))
                         exit(1)
                     }
-                    let report = await buildDesiredStateReport(desired: desired, source: source, catalog: cat)
                     if json {
                         printJSON(report)
                     } else {
@@ -1737,36 +1737,6 @@ enum Entry {
     }
 
     // MARK: - Desired State / Doctor CLI helpers
-
-    /// Saved profiles are tried first (a user's own name is more specific
-    /// than a bundled template), then bundled Role Templates, both matched
-    /// case-insensitively since this is typed on a command line.
-    @MainActor
-    private static func resolveDesiredState(named name: String,
-                                            catalog: Catalog) -> (Profile, DesiredStateSource)? {
-        let profiles = ProfileStore()
-        if let p = profiles.profiles.first(where: { $0.name.localizedCaseInsensitiveCompare(name) == .orderedSame }) {
-            return (p, DesiredStateSource(kind: .profile, name: p.name))
-        }
-        if let t = catalog.roleTemplateList.first(where: { $0.name.localizedCaseInsensitiveCompare(name) == .orderedSame }) {
-            return (t.asProfile, DesiredStateSource(kind: .roleTemplate, name: t.name))
-        }
-        return nil
-    }
-
-    @MainActor
-    private static func buildDesiredStateReport(desired: Profile, source: DesiredStateSource,
-                                                 catalog: Catalog) async -> DesiredStateReport {
-        let inventory = await MachineInventory.scan(catalogApps: catalog.apps)
-        let requiredApps = catalog.apps.filter { desired.appIDs.contains($0.id) }
-        let checker = UpdateChecker()
-        await checker.check(apps: requiredApps)
-        let requiredTweaks = catalog.systemDefaults.filter { desired.tweakIDs.contains($0.id) }
-        let tweakStates = requiredTweaks.map(TweakComplianceProbe.check)
-        return DesiredStateComparator.compare(desired: desired, source: source, catalog: catalog,
-                                              inventory: inventory, updateResults: checker.results,
-                                              tweakStates: tweakStates, webApps: catalog.webAppList)
-    }
 
     private static func printDesiredStateReport(_ report: DesiredStateReport) {
         print("Desired State — \(report.source.name) (\(report.source.kind.rawValue))")

@@ -16,17 +16,7 @@ final class DesiredStateEngine: ObservableObject {
         guard !isRunning else { return }
         isRunning = true
         defer { isRunning = false }
-
-        let inventory = await MachineInventory.scan(catalogApps: catalog.apps)
-        let requiredApps = catalog.apps.filter { desired.appIDs.contains($0.id) }
-        let checker = UpdateChecker()
-        await checker.check(apps: requiredApps)
-        let requiredTweaks = catalog.systemDefaults.filter { desired.tweakIDs.contains($0.id) }
-        let tweakStates = requiredTweaks.map(TweakComplianceProbe.check)
-
-        report = DesiredStateComparator.compare(desired: desired, source: source, catalog: catalog,
-                                                 inventory: inventory, updateResults: checker.results,
-                                                 tweakStates: tweakStates, webApps: catalog.webAppList)
+        report = await DesiredStateService.compare(desired: desired, source: source, catalog: catalog)
         rebuildPlan()
     }
 
