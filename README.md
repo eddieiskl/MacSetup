@@ -29,6 +29,21 @@ Choose applications, review the generated script, and follow per-app installatio
 
 The app is currently ad-hoc signed. Broad distribution requires Developer ID signing and notarization. Signature mismatches warn by default; strict verification is an explicit option. See the detailed behavior and limits below.
 
+## Architecture
+
+The reusable logic — catalogue, profiles, installing, update checking, script
+generation, Desired State, Doctor — lives in a separate library target,
+**MacSetupCore** (`Sources/MacSetupCore`), with no SwiftUI dependency. The
+`MacSetup` executable (`Sources/MacSetup`) is the SwiftUI app plus the CLI's
+argument parsing in `Main.swift`, both built on top of it. That split exists
+so a future MCP server or background agent can call the same logic the app
+and CLI already use, without duplicating it or linking the UI.
+
+See [docs/architecture-next.md](docs/architecture-next.md) for the module
+map, how a Desired State comparison and a remediation plan actually flow
+through the system, and the trust boundaries any future MCP integration has
+to respect.
+
 ## Build
 
 ```bash
@@ -88,6 +103,9 @@ Launch it, filter the catalogue, tick what you want, press **Install**.
   command and how to undo it.
 - **Role Templates** — 11 pre-filled starting selections for a job role or a
   way people use a Mac (see below).
+- **Desired State** — compare a saved profile or Role Template against what's
+  actually on the Mac, and selectively fix the gaps (see below).
+- **Doctor** — a handful of read-only health checks (see below).
 
 ### Role Templates
 
@@ -102,6 +120,44 @@ stack before rolling it out.
 Templates are just data (`roleTemplates` in `catalog.json`, the same shape as
 a saved profile), so adding one — or forking these for your own org — is a
 JSON edit, not a code change.
+
+### Desired State
+
+Treats a saved profile or a bundled Role Template as a **desired state** and
+compares it against the actual Mac:
+
+1. Pick a profile or Role Template.
+2. **Compare** — a read-only pass: installed-app scan, a scoped update check
+   against just the apps that profile asks for, and a probe of each requested
+   tweak's actual `defaults` value.
+3. See a summary — compliant, missing, outdated, different, unknown, extra —
+   and expand any group for the detail.
+4. Tick which gaps to fix. Installs, updates, tweaks and web apps default to
+   selected; **extra apps are informational only** and are never proposed for
+   removal unless you explicitly turn that on, and even then each removal is
+   its own checkbox plus a final confirmation.
+5. **Preview Script**, same as everywhere else in MacSetup, then **Apply** —
+   which hands the selection to the same install/update/tweak engine the rest
+   of the app uses. Removals go through the same Trash-not-delete path as
+   **Installed**.
+
+This is `Define → Preview → Verify → Apply`, the same shape as the rest of
+MacSetup — comparing changes nothing, and only Apply does.
+
+Tweak comparison currently covers the shape every bundled tweak already has
+(one or more plain `defaults write <domain> <key> -<type> <value>`
+statements) — read back with `defaults read` and compared. Anything that
+doesn't fit that shape is reported `unknown`, never guessed.
+
+### Doctor
+
+A small, read-only health-check foundation — not a full diagnostics suite yet.
+Today it checks: macOS version, architecture, free disk space, FileVault,
+Gatekeeper, System Integrity Protection, the Application Firewall, a pending
+macOS update, how many catalogue apps are outdated, and (on Apple Silicon)
+which installed apps are Intel-only and likely need Rosetta. Every check is
+read-only; nothing here changes the Mac, and a check that can't get a clean
+answer reports `unknown` rather than a guess.
 
 ### AI & Assistants
 
@@ -281,6 +337,38 @@ MacSetup.app/Contents/MacOS/MacSetup --list
 MacSetup.app/Contents/MacOS/MacSetup --emit-script google-chrome,slack,rectangle > setup.sh
 bash setup.sh
 ```
+
+Desired State and Doctor are available from the command line too, both with
+a `--json` mode meant for automation (or a future MCP server) rather than a
+person reading a terminal:
+
+```bash
+MacSetup.app/Contents/MacOS/MacSetup --compare-profile "Dev"
+MacSetup.app/Contents/MacOS/MacSetup --compare-profile "Dev" --json
+MacSetup.app/Contents/MacOS/MacSetup --doctor
+MacSetup.app/Contents/MacOS/MacSetup --doctor --json
+```
+
+`--compare-profile` matches a saved profile by name first, then a bundled
+Role Template. A real run against this repo's own "Dev" template looks like:
+
+```
+Desired State — Dev (roleTemplate)
+  2 compliant, 14 missing, 2 outdated, 0 different, 3 unknown, 66 extra
+
+  MISSING     Visual Studio Code  — Not installed.
+  OUTDATED    Cursor  — 3.21.18 installed, 3.22.7 available via Homebrew.
+  UNKNOWN     Docker Desktop  — updates itself via its own updater
+  ...
+```
+
+and the JSON form is a `DesiredStateReport` — `apps`, `tweaks`, `webApps` and
+`extraApps` arrays, each entry carrying a `status` of `compliant`, `missing`,
+`outdated`, `different`, `unknown`, `extra` or `notApplicable`, plus a
+`summary` with the counts. `--doctor --json` is a `DoctorReport` — a flat
+`results` array of `{identifier, category, title, details, severity}`.
+Both are stable, `sortedKeys`-encoded JSON, safe to pipe into `jq` or feed to
+another tool.
 
 ---
 
@@ -737,3 +825,13 @@ asset **filename**, not the full URL.
   Tools are unaffected — those it installs itself.
 - **The app is ad-hoc signed.** For fleet distribution, re-sign with your
   Developer ID and notarise (see the commented command in `build-app.sh`).
+- **Desired State's tweak comparison only covers `defaults write`-shaped
+  tweaks** — every bundled tweak today, but a future tweak that isn't purely
+  that shape reports `unknown` rather than a guess.
+- **Doctor is a foundation, not a full diagnostics suite.** Ten checks today;
+  more can be added behind the same `HealthCheck` protocol without touching
+  what's already there.
+- **Compatibility detection reads the installed binary's Mach-O header** — it
+  knows arm64/x86_64/universal/unknown for what's on disk right now, not
+  whether an app will actually run under a future macOS, and it says nothing
+  about apps that aren't installed yet.

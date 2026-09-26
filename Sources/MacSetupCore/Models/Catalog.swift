@@ -15,6 +15,17 @@ public struct Catalog: Codable {
 
     public var webAppList: [WebApp] { webApps ?? [] }
     public var roleTemplateList: [RoleTemplate] { roleTemplates ?? [] }
+
+    public init(schemaVersion: Int, updated: String, categories: [AppCategory], apps: [CatalogApp],
+                systemDefaults: [DefaultTweak], webApps: [WebApp]?, roleTemplates: [RoleTemplate]?) {
+        self.schemaVersion = schemaVersion
+        self.updated = updated
+        self.categories = categories
+        self.apps = apps
+        self.systemDefaults = systemDefaults
+        self.webApps = webApps
+        self.roleTemplates = roleTemplates
+    }
 }
 
 public struct AppCategory: Codable, Identifiable, Hashable {
@@ -22,6 +33,13 @@ public struct AppCategory: Codable, Identifiable, Hashable {
     public let name: String
     public let symbol: String
     public let order: Int
+
+    public init(id: String, name: String, symbol: String, order: Int) {
+        self.id = id
+        self.name = name
+        self.symbol = symbol
+        self.order = order
+    }
 }
 
 public enum SourceKind: String, Codable {
@@ -44,6 +62,23 @@ public struct AppSource: Codable, Hashable {
     public var formula: String?
     public var verify: String?        // command that must exist on PATH afterwards
     public var env: [String: String]?
+
+    public init(kind: SourceKind, url: String? = nil, urlArm64: String? = nil, urlX86: String? = nil,
+                format: String? = nil, repo: String? = nil, assetPattern: String? = nil,
+                cask: String? = nil, formula: String? = nil, verify: String? = nil,
+                env: [String: String]? = nil) {
+        self.kind = kind
+        self.url = url
+        self.urlArm64 = urlArm64
+        self.urlX86 = urlX86
+        self.format = format
+        self.repo = repo
+        self.assetPattern = assetPattern
+        self.cask = cask
+        self.formula = formula
+        self.verify = verify
+        self.env = env
+    }
 
     /// The URL to fetch on this machine's architecture.
     public func resolvedURL(arch: Arch) -> String? {
@@ -96,6 +131,28 @@ public struct CatalogApp: Codable, Identifiable, Hashable {
     public let source: AppSource
     public let fallback: AppSource?
 
+    public init(id: String, name: String, category: String, vendor: String, summary: String,
+                homepage: String, bundleId: String?, teamId: String?, tags: [String],
+                license: String, icon: String?, selfUpdates: String?, needsAdmin: Bool?,
+                caskInstaller: Bool?, source: AppSource, fallback: AppSource?) {
+        self.id = id
+        self.name = name
+        self.category = category
+        self.vendor = vendor
+        self.summary = summary
+        self.homepage = homepage
+        self.bundleId = bundleId
+        self.teamId = teamId
+        self.tags = tags
+        self.license = license
+        self.icon = icon
+        self.selfUpdates = selfUpdates
+        self.needsAdmin = needsAdmin
+        self.caskInstaller = caskInstaller
+        self.source = source
+        self.fallback = fallback
+    }
+
     /// Everything the search field matches against.
     public var searchHaystack: String {
         ([name, vendor, summary, id] + tags).joined(separator: " ").lowercased()
@@ -126,6 +183,18 @@ public struct DefaultTweak: Codable, Identifiable, Hashable {
     public let revert: String
     public let restart: [String]
     public let recommended: Bool
+
+    public init(id: String, group: String, name: String, detail: String, command: String,
+                revert: String, restart: [String], recommended: Bool) {
+        self.id = id
+        self.group = group
+        self.name = name
+        self.detail = detail
+        self.command = command
+        self.revert = revert
+        self.restart = restart
+        self.recommended = recommended
+    }
 }
 
 /// One thing the uninstaller can remove. Built either from a catalogue entry
@@ -181,7 +250,7 @@ public struct InstalledEntry: Identifiable, Hashable {
 
 // MARK: - Architecture
 
-public enum Arch: String {
+public enum Arch: String, Codable {
     case appleSilicon = "arm64"
     case intel = "x86_64"
 

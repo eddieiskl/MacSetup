@@ -1129,6 +1129,69 @@ else
     || bad "web app icons are all distinct" "$(grep -A3 DUPLICATE /tmp/st-ic.txt | head -4)"
 fi
 
+section "6. Desired State & Doctor"
+# The comparator, the remediation planner, the Mach-O architecture reader and
+# the Doctor checks are all real assertions against synthetic and (where
+# deterministic) real data — the same pattern as section 4's --test-* flags.
+if $BIN --test-desired-state > /tmp/st-ds.txt 2>&1; then
+  ok "desired-state comparator ($(grep -c '^  ok' /tmp/st-ds.txt) cases)"
+else
+  bad "desired-state comparator" "$(grep FAIL /tmp/st-ds.txt | head -3)"
+fi
+
+if $BIN --test-remediation > /tmp/st-rem.txt 2>&1; then
+  ok "remediation planner ($(grep -c '^  ok' /tmp/st-rem.txt) cases)"
+else
+  bad "remediation planner" "$(grep FAIL /tmp/st-rem.txt | head -3)"
+fi
+
+if $BIN --test-compat > /tmp/st-compat.txt 2>&1; then
+  ok "architecture / compatibility detection ($(grep -c '^  ok' /tmp/st-compat.txt) cases)"
+else
+  bad "architecture / compatibility detection" "$(grep FAIL /tmp/st-compat.txt | head -3)"
+fi
+
+if $BIN --test-doctor > /tmp/st-doctor.txt 2>&1; then
+  ok "doctor checks ($(grep -c '^  ok' /tmp/st-doctor.txt) cases)"
+else
+  bad "doctor checks" "$(grep FAIL /tmp/st-doctor.txt | head -3)"
+fi
+
+# The harness itself must be able to detect a failure, the same sanity check
+# section 4 already runs for --test-unlock/--test-nudge/--test-nag.
+if ! $BIN --test-desired-state --force-fail >/dev/null 2>&1 \
+   && ! $BIN --test-remediation --force-fail >/dev/null 2>&1 \
+   && ! $BIN --test-compat --force-fail >/dev/null 2>&1 \
+   && ! $BIN --test-doctor --force-fail >/dev/null 2>&1; then
+  ok "the desired-state/doctor harnesses report failures when they occur"
+else
+  bad "the desired-state/doctor harnesses report failures when they occur"
+fi
+
+# A real, end-to-end CLI run against a bundled Role Template, both as text
+# and as JSON an automation pipeline (or a future MCP server) could consume.
+FIRSTTEMPLATE=$(python3 -c "
+import json; c=json.load(open('$CATALOG'))
+t = c.get('roleTemplates', [])
+print(t[0]['name'] if t else '')")
+if [ -n "$FIRSTTEMPLATE" ]; then
+  if $BIN --compare-profile "$FIRSTTEMPLATE" --json > /tmp/st-cp.json 2>/tmp/st-cp.err \
+     && python3 -m json.tool /tmp/st-cp.json >/dev/null 2>&1; then
+    ok "--compare-profile --json emits valid JSON for a real Role Template"
+  else
+    bad "--compare-profile --json emits valid JSON" "$(tail -3 /tmp/st-cp.err)"
+  fi
+else
+  skip "no bundled Role Template to compare against"
+fi
+
+if $BIN --doctor --json > /tmp/st-doc.json 2>/tmp/st-doc.err \
+   && python3 -m json.tool /tmp/st-doc.json >/dev/null 2>&1; then
+  ok "--doctor --json emits valid JSON"
+else
+  bad "--doctor --json emits valid JSON" "$(tail -3 /tmp/st-doc.err)"
+fi
+
 # ---------------------------------------------------------------- summary
 printf '\n\033[1m────────────────────────────────────────────\033[0m\n'
 printf ' passed \033[32m%s\033[0m   failed \033[31m%s\033[0m   skipped \033[33m%s\033[0m\n' "$PASS" "$FAIL" "$SKIP"

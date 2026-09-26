@@ -26,6 +26,8 @@ struct MacSetupApp: App {
     @StateObject private var store = AppStoreChecker()
     @StateObject private var staged = PendingRestartStore()
     @StateObject private var unlock = UnlockWatcher()
+    @StateObject private var desiredState = DesiredStateEngine()
+    @StateObject private var doctor = DoctorRunner()
 
     private func openAbout() {
         if let existing = Self.aboutWindow {
@@ -61,6 +63,8 @@ struct MacSetupApp: App {
                 .environmentObject(system)
                 .environmentObject(store)
                 .environmentObject(staged)
+                .environmentObject(desiredState)
+                .environmentObject(doctor)
                 .background(WindowFitter(metrics: metrics, maximized: openMaximized))
                 .task {
                     // A moment after launch, so it never competes with the

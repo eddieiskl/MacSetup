@@ -38,6 +38,11 @@ struct SidebarView: View {
                     highlight: state.hasSelection)
             }
 
+            Section("Health") {
+                row(.desiredState, "Desired State", "checkmark.seal", count: 0)
+                row(.doctor, "Doctor", "stethoscope", count: 0)
+            }
+
             Section("Quick Picks") {
                 quickPick("Essentials", "star.fill", tag: "essential")
                 quickPick("Business Baseline", "briefcase.fill", tag: "business")

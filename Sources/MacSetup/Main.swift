@@ -48,6 +48,8 @@ enum Entry {
                 let profiles = ProfileStore()
                 let engine = InstallEngine()
                 let checker = UpdateChecker()
+                let desiredState = DesiredStateEngine()
+                let doctor = DoctorRunner()
 
                 // Populate enough state that the shots show real content.
                 state.selectedApps = Set(["google-chrome", "slack", "visual-studio-code",
@@ -62,10 +64,18 @@ enum Entry {
                 for a in state.allApps.prefix(30) { await icons.load(IconTarget(a)) }
                 for w in state.allWebApps.prefix(20) { await icons.load(IconTarget(w)) }
 
+                if let template = state.roleTemplates.first, let catalog = state.catalog {
+                    await desiredState.compare(desired: template.asProfile,
+                                               source: DesiredStateSource(kind: .roleTemplate, name: template.name),
+                                               catalog: catalog)
+                }
+                await doctor.run(catalogApps: state.allApps)
+
                 let files = UIRenderer.renderAll(to: URL(fileURLWithPath: outDir),
                                                  state: state, icons: icons,
                                                  profiles: profiles, engine: engine,
-                                                 checker: checker)
+                                                 checker: checker, desiredState: desiredState,
+                                                 doctor: doctor)
                 for f in files { print(f) }
                 print("\n\(files.count) view(s) rendered to \(outDir)")
                 flag.done = true
@@ -1034,6 +1044,333 @@ enum Entry {
             exit(failed == 0 ? 0 : 1)
         }
 
+        if args.contains("--test-desired-state") {
+            var failed = args.contains("--force-fail") ? 1 : 0
+            func check(_ label: String, _ ok: Bool) {
+                if !ok { failed += 1 }
+                print("  \(ok ? "ok  " : "FAIL") \(label)")
+            }
+
+            func testApp(_ id: String, bundle: String) -> CatalogApp {
+                CatalogApp(id: id, name: id.capitalized, category: "test", vendor: "Test",
+                          summary: "", homepage: "https://example.com", bundleId: bundle,
+                          teamId: nil, tags: [], license: "Free", icon: nil, selfUpdates: nil,
+                          needsAdmin: nil, caskInstaller: nil,
+                          source: AppSource(kind: .direct, url: "https://example.com/x.dmg", format: "dmg"),
+                          fallback: nil)
+            }
+            let compliantApp = testApp("compliant-app", bundle: "com.test.compliant")
+            let missingApp = testApp("missing-app", bundle: "com.test.missing")
+            let outdatedApp = testApp("outdated-app", bundle: "com.test.outdated")
+            let unknownApp = testApp("unknown-app", bundle: "com.test.unknown")
+            let extraCataloguedApp = testApp("extra-app", bundle: "com.test.extra")
+            let tweak = DefaultTweak(id: "test-tweak", group: "Test", name: "Test Tweak",
+                                     detail: "", command: "defaults write com.test.selftest Flag -bool true",
+                                     revert: "defaults write com.test.selftest Flag -bool false",
+                                     restart: [], recommended: false)
+            let webApp = WebApp(id: "test-webapp", name: "Test Web App", group: "Test",
+                                url: "https://example.com", summary: "", icon: nil)
+            let catalog = Catalog(schemaVersion: 1, updated: "", categories: [],
+                                  apps: [compliantApp, missingApp, outdatedApp, unknownApp, extraCataloguedApp],
+                                  systemDefaults: [tweak], webApps: [webApp], roleTemplates: [])
+
+            let desired = Profile(name: "Selftest", appIDs: [compliantApp.id, missingApp.id,
+                                                              outdatedApp.id, unknownApp.id],
+                                  tweakIDs: [tweak.id], webAppIDs: [webApp.id])
+            let source = DesiredStateSource(kind: .profile, name: desired.name)
+
+            let inventory = [
+                InstalledEntry(id: "1", name: compliantApp.name, bundleID: compliantApp.bundleId!,
+                               version: "1.0", path: "/Applications/Compliant.app", catalogID: compliantApp.id),
+                InstalledEntry(id: "2", name: outdatedApp.name, bundleID: outdatedApp.bundleId!,
+                               version: "1.0", path: "/Applications/Outdated.app", catalogID: outdatedApp.id),
+                InstalledEntry(id: "3", name: unknownApp.name, bundleID: unknownApp.bundleId!,
+                               version: "1.0", path: "/Applications/Unknown.app", catalogID: unknownApp.id),
+                InstalledEntry(id: "4", name: extraCataloguedApp.name, bundleID: extraCataloguedApp.bundleId!,
+                               version: "1.0", path: "/Applications/Extra.app", catalogID: extraCataloguedApp.id),
+                InstalledEntry(id: "5", name: "Some Uncatalogued Tool", bundleID: "com.example.uncatalogued",
+                               version: "1.0", path: "/Applications/Uncatalogued.app", catalogID: nil),
+            ]
+            let updateResults = [
+                UpdateResult(id: compliantApp.id, name: compliantApp.name, state: .upToDate("1.0"), via: "test"),
+                UpdateResult(id: outdatedApp.id, name: outdatedApp.name,
+                            state: .available(installed: "1.0", latest: "2.0"), via: "test"),
+                UpdateResult(id: unknownApp.id, name: unknownApp.name,
+                            state: .unknown(installed: "1.0", reason: "cannot verify"), via: "test"),
+            ]
+            let tweakStates = [TweakComplianceResult(tweakID: tweak.id, status: .different,
+                                                      detail: "Flag is 0, expected 1")]
+
+            let report = DesiredStateComparator.compare(desired: desired, source: source, catalog: catalog,
+                                                        inventory: inventory, updateResults: updateResults,
+                                                        tweakStates: tweakStates, webApps: [webApp])
+
+            func status(_ id: String) -> ComplianceStatus? { report.apps.first { $0.id == id }?.status }
+            check("a fully up to date app is compliant", status(compliantApp.id) == .compliant)
+            check("an app absent from the inventory is missing", status(missingApp.id) == .missing)
+            check("an app with a newer release available is outdated", status(outdatedApp.id) == .outdated)
+            check("an app whose version can't be verified is unknown, not guessed",
+                  status(unknownApp.id) == .unknown)
+            check("a cataloged app installed but not requested is reported as extra",
+                  report.extraApps.contains { $0.catalogID == extraCataloguedApp.id })
+            check("an uncataloged app installed is reported as extra too",
+                  report.extraApps.contains { $0.catalogID == nil && $0.name == "Some Uncatalogued Tool" })
+            check("extra apps are informational only — never auto-selected for removal",
+                  RemediationPlanner.plan(from: report).actions.allSatisfy { $0.kind != .removeApp })
+            check("a tweak mismatch is reported as different",
+                  report.tweaks.first { $0.id == tweak.id }?.status == .different)
+            // missing = 1 app + the requested web app, which has no matching
+            // bundle in this synthetic inventory.
+            check("the summary counts add up",
+                  report.summary.compliant == 1 && report.summary.missing == 2
+                  && report.summary.outdated == 1 && report.summary.unknown == 1
+                  && report.summary.different == 1 && report.summary.extra == 2)
+
+            // A tweak whose command is not purely `defaults write` (the
+            // `mkdir -p` prefix some real catalogue tweaks carry) must not be
+            // guessed at — the probe has to say so honestly.
+            let unparsableTweak = DefaultTweak(id: "mkdir-tweak", group: "Test", name: "Mkdir Tweak",
+                                               detail: "", command: "mkdir -p \"$USER_HOME/Test\"; defaults write com.test.selftest2 Flag -bool true",
+                                               revert: "", restart: [], recommended: false)
+            check("a tweak that isn't purely defaults-write is unknown, not guessed",
+                  TweakComplianceProbe.check(unparsableTweak).status == .unknown)
+            check("a plain defaults-write command parses into one assignment",
+                  TweakComplianceProbe.parse(tweak.command)?.count == 1)
+            check("a command with a non defaults-write segment fails to parse at all",
+                  TweakComplianceProbe.parse(unparsableTweak.command) == nil)
+
+            // JSON must round-trip: this is what a future MCP client, or
+            // `--compare-profile --json`, actually consumes.
+            let enc = JSONEncoder(); enc.dateEncodingStrategy = .iso8601
+            let dec = JSONDecoder(); dec.dateDecodingStrategy = .iso8601
+            if let data = try? enc.encode(report),
+               let back = try? dec.decode(DesiredStateReport.self, from: data) {
+                check("a DesiredStateReport round-trips through JSON",
+                      back.summary.compliant == report.summary.compliant
+                      && back.apps.count == report.apps.count
+                      && back.source.name == report.source.name)
+            } else {
+                check("a DesiredStateReport round-trips through JSON", false)
+            }
+
+            print("\n\(failed == 0 ? "all desired-state cases passed" : "\(failed) desired-state cases failed")")
+            exit(failed == 0 ? 0 : 1)
+        }
+
+        if args.contains("--test-remediation") {
+            var failed = args.contains("--force-fail") ? 1 : 0
+            func check(_ label: String, _ ok: Bool) {
+                if !ok { failed += 1 }
+                print("  \(ok ? "ok  " : "FAIL") \(label)")
+            }
+
+            let source = DesiredStateSource(kind: .profile, name: "Selftest")
+            let report = DesiredStateReport(
+                machine: .current(), source: source,
+                apps: [
+                    AppFinding(id: "missing-app", name: "Missing App", status: .missing,
+                              installedVersion: nil, latestVersion: nil, detail: "Not installed."),
+                    AppFinding(id: "outdated-app", name: "Outdated App", status: .outdated,
+                              installedVersion: "1.0", latestVersion: "2.0", detail: "Update available."),
+                    AppFinding(id: "unknown-app", name: "Unknown App", status: .unknown,
+                              installedVersion: "1.0", latestVersion: nil, detail: "Cannot verify."),
+                    AppFinding(id: "compliant-app", name: "Compliant App", status: .compliant,
+                              installedVersion: "1.0", latestVersion: "1.0", detail: "Up to date."),
+                ],
+                tweaks: [
+                    TweakFinding(id: "different-tweak", name: "Different Tweak", status: .different,
+                                detail: "Mismatch."),
+                    TweakFinding(id: "unknown-tweak", name: "Unknown Tweak", status: .unknown,
+                                detail: "Cannot verify."),
+                ],
+                webApps: [
+                    WebAppFinding(id: "missing-webapp", name: "Missing Web App", status: .missing,
+                                 detail: "Not installed."),
+                ],
+                extraApps: [
+                    ExtraAppFinding(name: "Extra One", bundleID: "com.test.extra1",
+                                   path: "/Applications/Extra One.app", catalogID: "extra-one",
+                                   detail: "Not requested."),
+                    ExtraAppFinding(name: "Extra Two", bundleID: "com.test.extra2",
+                                   path: "/Applications/Extra Two.app", catalogID: nil,
+                                   detail: "Not catalogued."),
+                ],
+                warnings: [])
+
+            let withoutRemovals = RemediationPlanner.plan(from: report, includeRemovals: false)
+            check("a missing app becomes an install action",
+                  withoutRemovals.actions.contains { $0.kind == .installApp && $0.targetID == "missing-app" })
+            check("an outdated app becomes an update action",
+                  withoutRemovals.actions.contains { $0.kind == .updateApp && $0.targetID == "outdated-app" })
+            check("an app with an unknown version becomes a manual-check action",
+                  withoutRemovals.actions.contains { $0.kind == .manualActionRequired && $0.targetID == "unknown-app" })
+            check("a compliant app produces no action",
+                  !withoutRemovals.actions.contains { $0.targetID == "compliant-app" })
+            check("a mismatched tweak becomes an apply-tweak action",
+                  withoutRemovals.actions.contains { $0.kind == .applyTweak && $0.targetID == "different-tweak" })
+            check("a tweak that can't be verified becomes unsupported, not applied blindly",
+                  withoutRemovals.actions.contains { $0.kind == .unsupported && $0.targetID == "unknown-tweak" })
+            check("a missing web app becomes a create-web-app action",
+                  withoutRemovals.actions.contains { $0.kind == .createWebApp && $0.targetID == "missing-webapp" })
+            check("no removal is proposed unless the caller explicitly opts in",
+                  !withoutRemovals.actions.contains { $0.kind == .removeApp })
+
+            let withRemovals = RemediationPlanner.plan(from: report, includeRemovals: true)
+            let removals = withRemovals.actions.filter { $0.kind == .removeApp }
+            check("opting in proposes a removal for every extra app", removals.count == report.extraApps.count)
+            check("every removal requires explicit approval",
+                  removals.allSatisfy(\.requiresExplicitApproval))
+            check("no other action kind requires explicit approval by default",
+                  withoutRemovals.actions.allSatisfy { !$0.requiresExplicitApproval })
+
+            let enc = JSONEncoder(); enc.dateEncodingStrategy = .iso8601
+            let dec = JSONDecoder(); dec.dateDecodingStrategy = .iso8601
+            if let data = try? enc.encode(withRemovals),
+               let back = try? dec.decode(RemediationPlan.self, from: data) {
+                check("a RemediationPlan round-trips through JSON",
+                      back.actions.count == withRemovals.actions.count)
+            } else {
+                check("a RemediationPlan round-trips through JSON", false)
+            }
+
+            print("\n\(failed == 0 ? "all remediation cases passed" : "\(failed) remediation cases failed")")
+            exit(failed == 0 ? 0 : 1)
+        }
+
+        if args.contains("--test-compat") {
+            var failed = args.contains("--force-fail") ? 1 : 0
+            func check(_ label: String, _ ok: Bool) {
+                if !ok { failed += 1 }
+                print("  \(ok ? "ok  " : "FAIL") \(label)")
+            }
+
+            func writeTemp(_ bytes: [UInt8]) -> String {
+                let url = FileManager.default.temporaryDirectory
+                    .appendingPathComponent("macsetup-selftest-\(UUID().uuidString.prefix(8))")
+                FileManager.default.createFile(atPath: url.path, contents: Data(bytes))
+                try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: url.path)
+                return url.path
+            }
+
+            // A thin 64-bit Mach-O header: magic (little-endian on disk, which
+            // is what every real Intel/Apple Silicon binary is) then cputype.
+            func thinMachO(cpuType: UInt32) -> [UInt8] {
+                var bytes = [UInt8]()
+                withUnsafeBytes(of: UInt32(0xfeedfacf).littleEndian) { bytes += $0 }
+                withUnsafeBytes(of: cpuType.littleEndian) { bytes += $0 }
+                bytes += [0, 0, 0, 0]   // pad past the 8 bytes this detector reads
+                return bytes
+            }
+            let arm64Path = writeTemp(thinMachO(cpuType: 0x0100_000C))
+            let x86Path = writeTemp(thinMachO(cpuType: 0x0100_0007))
+            let garbagePath = writeTemp(Array("not a mach-o file at all".utf8))
+
+            check("a thin arm64 Mach-O is read as Apple Silicon",
+                  BinaryArchitectureDetector.detect(executableAt: arm64Path) == .appleSilicon)
+            check("a thin x86_64 Mach-O is read as Intel",
+                  BinaryArchitectureDetector.detect(executableAt: x86Path) == .intel)
+            check("a file that isn't Mach-O at all is unknown, never guessed",
+                  BinaryArchitectureDetector.detect(executableAt: garbagePath) == .unknown)
+            check("a path that doesn't exist is unknown",
+                  BinaryArchitectureDetector.detect(executableAt: "/nonexistent/\(UUID().uuidString)") == .unknown)
+
+            // A fat (universal) header: magic is stored big-endian on disk
+            // regardless of the reading host's own endianness.
+            func fatHeader(archs: [UInt32]) -> [UInt8] {
+                var bytes = [UInt8]()
+                withUnsafeBytes(of: UInt32(0xcafebabe).bigEndian) { bytes += $0 }
+                withUnsafeBytes(of: UInt32(archs.count).bigEndian) { bytes += $0 }
+                for cpu in archs {
+                    withUnsafeBytes(of: cpu.bigEndian) { bytes += $0 }
+                    bytes += [UInt8](repeating: 0, count: 16)   // cpusubtype, offset, size, align
+                }
+                return bytes
+            }
+            let universalPath = writeTemp(fatHeader(archs: [0x0100_0007, 0x0100_000C]))
+            let fatArmOnlyPath = writeTemp(fatHeader(archs: [0x0100_000C]))
+            check("a fat binary carrying both slices is universal",
+                  BinaryArchitectureDetector.detect(executableAt: universalPath) == .universal)
+            check("a fat binary with a single recognised slice is that architecture, not universal",
+                  BinaryArchitectureDetector.detect(executableAt: fatArmOnlyPath) == .appleSilicon)
+
+            for p in [arm64Path, x86Path, garbagePath, universalPath, fatArmOnlyPath] {
+                try? FileManager.default.removeItem(atPath: p)
+            }
+
+            // The compatibility model's own logic — no filesystem involved.
+            check("an Intel-only app on an Apple Silicon Mac likely needs Rosetta",
+                  AppCompatibility(bundleID: "x", path: "/x", architecture: .intel,
+                                   currentArch: .appleSilicon).rosettaLikelyRequired)
+            check("an Intel-only app on an Intel Mac needs no Rosetta",
+                  !AppCompatibility(bundleID: "x", path: "/x", architecture: .intel,
+                                    currentArch: .intel).rosettaLikelyRequired)
+            check("a universal app never needs Rosetta",
+                  !AppCompatibility(bundleID: "x", path: "/x", architecture: .universal,
+                                    currentArch: .appleSilicon).rosettaLikelyRequired)
+            check("an unreadable binary is never assumed to need Rosetta",
+                  !AppCompatibility(bundleID: "x", path: "/x", architecture: .unknown,
+                                    currentArch: .appleSilicon).rosettaLikelyRequired)
+
+            print("\n\(failed == 0 ? "all compatibility cases passed" : "\(failed) compatibility cases failed")")
+            exit(failed == 0 ? 0 : 1)
+        }
+
+        if args.contains("--test-doctor") {
+            var failed = args.contains("--force-fail") ? 1 : 0
+            func check(_ label: String, _ ok: Bool) {
+                if !ok { failed += 1 }
+                print("  \(ok ? "ok  " : "FAIL") \(label)")
+            }
+
+            final class Flag { var done = false }
+            let flag = Flag()
+            Task { @MainActor in
+                // Deterministic regardless of what's actually on this Mac: an
+                // absurd threshold forces each branch of the disk-space check.
+                let low = await DiskSpaceCheck(warningThresholdBytes: .max).run()
+                check("free space below any threshold is reported as a warning, not healthy",
+                      low.severity == .warning)
+                let high = await DiskSpaceCheck(warningThresholdBytes: 0).run()
+                check("free space above the threshold is reported as healthy",
+                      high.severity == .healthy)
+
+                let arch = await ArchitectureCheck().run()
+                check("the architecture check names this Mac's real architecture",
+                      arch.details == Arch.current.display)
+                check("the architecture check is informational, not a pass/fail verdict",
+                      arch.severity == .info)
+
+                let version = await MacOSVersionCheck().run()
+                check("the macOS version check reports something", !version.details.isEmpty)
+
+                let cat = (try? CatalogLoader.load())?.apps ?? []
+                let report = await DoctorEngine.run(catalogApps: cat)
+                check("every standard check ran", report.results.count >= DoctorEngine.standardChecks.count)
+                check("every result has a non-empty title", report.results.allSatisfy { !$0.title.isEmpty })
+                check("the report names this Mac's own architecture",
+                      report.machine.architecture == Arch.current)
+                check("nothing here claims to have changed anything",
+                      report.results.allSatisfy { !$0.details.lowercased().contains("changed") })
+
+                let enc = JSONEncoder(); enc.dateEncodingStrategy = .iso8601
+                let dec = JSONDecoder(); dec.dateDecodingStrategy = .iso8601
+                if let data = try? enc.encode(report),
+                   let back = try? dec.decode(DoctorReport.self, from: data) {
+                    check("a DoctorReport round-trips through JSON",
+                          back.results.count == report.results.count)
+                } else {
+                    check("a DoctorReport round-trips through JSON", false)
+                }
+
+                print("\n\(failed == 0 ? "all doctor cases passed" : "\(failed) doctor cases failed")")
+                flag.done = true
+            }
+            while !flag.done {
+                _ = RunLoop.main.run(mode: .default, before: Date().addingTimeInterval(0.05))
+            }
+            exit(failed == 0 ? 0 : 1)
+        }
+
         if args.contains("--auto-update") {
             let dryRun = args.contains("--dry-run")
             // With --allow-prompt the scheduled run may raise the standard macOS
@@ -1344,7 +1681,136 @@ enum Entry {
             exit(0)
         }
 
+        if let i = args.firstIndex(of: "--compare-profile") {
+            guard i + 1 < args.count else {
+                FileHandle.standardError.write(Data("--compare-profile needs a profile or role template name\n".utf8))
+                exit(2)
+            }
+            let name = args[i + 1]
+            let json = args.contains("--json")
+            runCLI { cat in
+                final class Flag { var done = false }
+                let flag = Flag()
+                Task { @MainActor in
+                    guard let (desired, source) = resolveDesiredState(named: name, catalog: cat) else {
+                        FileHandle.standardError.write(Data(
+                            "no saved profile or role template named '\(name)'\n".utf8))
+                        exit(1)
+                    }
+                    let report = await buildDesiredStateReport(desired: desired, source: source, catalog: cat)
+                    if json {
+                        printJSON(report)
+                    } else {
+                        printDesiredStateReport(report)
+                    }
+                    flag.done = true
+                }
+                while !flag.done {
+                    _ = RunLoop.main.run(mode: .default, before: Date().addingTimeInterval(0.05))
+                }
+            }
+            exit(0)
+        }
+
+        if args.contains("--doctor") {
+            let json = args.contains("--json")
+            runCLI { cat in
+                final class Flag { var done = false }
+                let flag = Flag()
+                Task { @MainActor in
+                    let report = await DoctorEngine.run(catalogApps: cat.apps)
+                    if json {
+                        printJSON(report)
+                    } else {
+                        printDoctorReport(report)
+                    }
+                    flag.done = true
+                }
+                while !flag.done {
+                    _ = RunLoop.main.run(mode: .default, before: Date().addingTimeInterval(0.05))
+                }
+            }
+            exit(0)
+        }
+
         MacSetupApp.main()
+    }
+
+    // MARK: - Desired State / Doctor CLI helpers
+
+    /// Saved profiles are tried first (a user's own name is more specific
+    /// than a bundled template), then bundled Role Templates, both matched
+    /// case-insensitively since this is typed on a command line.
+    @MainActor
+    private static func resolveDesiredState(named name: String,
+                                            catalog: Catalog) -> (Profile, DesiredStateSource)? {
+        let profiles = ProfileStore()
+        if let p = profiles.profiles.first(where: { $0.name.localizedCaseInsensitiveCompare(name) == .orderedSame }) {
+            return (p, DesiredStateSource(kind: .profile, name: p.name))
+        }
+        if let t = catalog.roleTemplateList.first(where: { $0.name.localizedCaseInsensitiveCompare(name) == .orderedSame }) {
+            return (t.asProfile, DesiredStateSource(kind: .roleTemplate, name: t.name))
+        }
+        return nil
+    }
+
+    @MainActor
+    private static func buildDesiredStateReport(desired: Profile, source: DesiredStateSource,
+                                                 catalog: Catalog) async -> DesiredStateReport {
+        let inventory = await MachineInventory.scan(catalogApps: catalog.apps)
+        let requiredApps = catalog.apps.filter { desired.appIDs.contains($0.id) }
+        let checker = UpdateChecker()
+        await checker.check(apps: requiredApps)
+        let requiredTweaks = catalog.systemDefaults.filter { desired.tweakIDs.contains($0.id) }
+        let tweakStates = requiredTweaks.map(TweakComplianceProbe.check)
+        return DesiredStateComparator.compare(desired: desired, source: source, catalog: catalog,
+                                              inventory: inventory, updateResults: checker.results,
+                                              tweakStates: tweakStates, webApps: catalog.webAppList)
+    }
+
+    private static func printDesiredStateReport(_ report: DesiredStateReport) {
+        print("Desired State — \(report.source.name) (\(report.source.kind.rawValue))")
+        print("  \(report.summary.compliant) compliant, \(report.summary.missing) missing, "
+              + "\(report.summary.outdated) outdated, \(report.summary.different) different, "
+              + "\(report.summary.unknown) unknown, \(report.summary.extra) extra\n")
+        for f in report.apps where f.status != .compliant {
+            print("  \(f.status.rawValue.uppercased().padding(toLength: 11, withPad: " ", startingAt: 0)) \(f.name)  — \(f.detail)")
+        }
+        for f in report.tweaks where f.status != .compliant {
+            print("  \(f.status.rawValue.uppercased().padding(toLength: 11, withPad: " ", startingAt: 0)) \(f.name)  — \(f.detail)")
+        }
+        for f in report.webApps where f.status != .compliant {
+            print("  \(f.status.rawValue.uppercased().padding(toLength: 11, withPad: " ", startingAt: 0)) \(f.name)  — \(f.detail)")
+        }
+        if !report.extraApps.isEmpty {
+            print("\n  \(report.extraApps.count) extra app(s) present but not requested (informational only):")
+            for e in report.extraApps.prefix(10) { print("      \(e.name)  — \(e.detail)") }
+        }
+        for w in report.warnings { print("\n  warning: \(w)") }
+    }
+
+    private static func printDoctorReport(_ report: DoctorReport) {
+        print("MacSetup Doctor — \(report.machine.hostName) (macOS \(report.machine.macOSVersion), \(report.machine.architecture.display))\n")
+        let order: [HealthSeverity] = [.critical, .warning, .unknown, .info, .healthy]
+        for severity in order {
+            let matching = report.results.filter { $0.severity == severity }
+            guard !matching.isEmpty else { continue }
+            for r in matching {
+                print("  \(severity.rawValue.uppercased().padding(toLength: 9, withPad: " ", startingAt: 0)) \(r.title)  — \(r.details)")
+            }
+        }
+    }
+
+    private static func printJSON(_ value: Encodable) {
+        let enc = JSONEncoder()
+        enc.outputFormatting = [.prettyPrinted, .sortedKeys]
+        enc.dateEncodingStrategy = .iso8601
+        if let data = try? enc.encode(value), let s = String(data: data, encoding: .utf8) {
+            print(s)
+        } else {
+            FileHandle.standardError.write(Data("could not encode JSON\n".utf8))
+            exit(1)
+        }
     }
 
     private static func runCLI(_ body: (Catalog) -> Void) {
@@ -1386,6 +1852,10 @@ enum Entry {
                                             Build web apps as standalone apps
           MacSetup --emit-script a,b --strict
                                             Fail an item on signature mismatch
+          MacSetup --compare-profile "<name>" [--json]
+                                            Compare a saved profile or bundled Role
+                                            Template against this Mac (Desired State)
+          MacSetup --doctor [--json]        Run MacSetup Doctor's read-only health checks
 
         Example:
           MacSetup --emit-script google-chrome,slack,rectangle > setup.sh

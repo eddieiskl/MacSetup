@@ -13,7 +13,8 @@ enum UIRenderer {
 
     static func renderAll(to directory: URL, state: AppState,
                           icons: IconProvider, profiles: ProfileStore,
-                          engine: InstallEngine, checker: UpdateChecker) -> [String] {
+                          engine: InstallEngine, checker: UpdateChecker,
+                          desiredState: DesiredStateEngine, doctor: DoctorRunner) -> [String] {
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         var written: [String] = []
 
@@ -24,6 +25,8 @@ enum UIRenderer {
                 .environmentObject(profiles)
                 .environmentObject(engine)
                 .environmentObject(checker)
+                .environmentObject(desiredState)
+                .environmentObject(doctor)
                 .frame(width: size.width, height: size.height)
                 .background(Color(nsColor: .windowBackgroundColor))
 
@@ -164,6 +167,9 @@ enum UIRenderer {
             }
             .padding(14)
         }
+
+        shot("10-desired-state", CGSize(width: 900, height: 700)) { DesiredStateView() }
+        shot("11-doctor", CGSize(width: 800, height: 600)) { DoctorView() }
 
         return written
     }

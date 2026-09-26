@@ -10,6 +10,8 @@ enum Pane: Hashable {
     case tweaks
     case selection
     case roleTemplates
+    case desiredState
+    case doctor
 }
 
 struct ContentView: View {
@@ -85,13 +87,17 @@ struct ContentView: View {
                 SelectionReview()
             case .roleTemplates:
                 RoleTemplatesView(showSaveProfile: $showSaveProfile)
+            case .desiredState:
+                DesiredStateView()
+            case .doctor:
+                DoctorView()
             default:
                 CatalogView()
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             VStack(spacing: 0) {
-                if pane != .installed {
+                if pane != .installed, pane != .desiredState, pane != .doctor {
                     Divider()
                     ActionBar(showScript: $showScript, showQueue: $showQueue)
                 }
