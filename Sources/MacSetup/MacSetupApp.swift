@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import MacSetupCore
 
 struct MacSetupApp: App {
     /// When true, closing the window leaves the app running in the menu bar

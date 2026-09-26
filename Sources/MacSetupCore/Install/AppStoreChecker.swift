@@ -1,10 +1,10 @@
 import Foundation
 
-struct AppStoreUpdate: Identifiable, Hashable {
-    let id: String        // App Store numeric id
-    let name: String
-    let installed: String
-    let latest: String
+public struct AppStoreUpdate: Identifiable, Hashable {
+    public let id: String        // App Store numeric id
+    public let name: String
+    public let installed: String
+    public let latest: String
 }
 
 /// App Store updates, via the `mas` command line tool.
@@ -14,9 +14,9 @@ struct AppStoreUpdate: Identifiable, Hashable {
 /// the same as "everything is up to date", and saying so would be a lie — hence
 /// a distinct state for it.
 @MainActor
-final class AppStoreChecker: ObservableObject {
+public final class AppStoreChecker: ObservableObject {
 
-    enum State: Equatable {
+    public enum State: Equatable {
         case notChecked
         case masMissing
         /// mas is installed but cannot see the apps. On recent macOS the
@@ -28,24 +28,26 @@ final class AppStoreChecker: ObservableObject {
         case updates([AppStoreUpdate])
     }
 
-    @Published private(set) var state: State = .notChecked
-    @Published private(set) var isChecking = false
-    @Published private(set) var lastChecked: Date?
+    @Published public private(set) var state: State = .notChecked
+    @Published public private(set) var isChecking = false
+    @Published public private(set) var lastChecked: Date?
     /// App Store apps found on disk by their receipt, which does not depend on
     /// Spotlight and therefore always works.
-    @Published private(set) var receiptApps: [String] = []
+    @Published public private(set) var receiptApps: [String] = []
 
-    var updates: [AppStoreUpdate] {
+    public init() {}
+
+    public var updates: [AppStoreUpdate] {
         if case .updates(let u) = state { return u }
         return []
     }
 
-    static var masPath: String? {
+    public static var masPath: String? {
         ["/opt/homebrew/bin/mas", "/usr/local/bin/mas"]
             .first { FileManager.default.isExecutableFile(atPath: $0) }
     }
 
-    func check() async {
+    public func check() async {
         guard !isChecking else { return }
         isChecking = true
         defer { isChecking = false; lastChecked = Date() }
@@ -72,7 +74,7 @@ final class AppStoreChecker: ObservableObject {
 
     /// Every app carrying an App Store receipt. Reading the filesystem avoids
     /// Spotlight entirely, so this is dependable where `mas list` is not.
-    static func findAppStoreApps() -> [String] {
+    public static func findAppStoreApps() -> [String] {
         let fm = FileManager.default
         var found: [String] = []
         for dir in ["/Applications", "\(NSHomeDirectory())/Applications"] {

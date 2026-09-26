@@ -12,15 +12,15 @@ import AppKit
 /// It still needs that password — no tool can avoid it on Apple Silicon. What
 /// it removes is the clicking, and it allows the restart to be delayed rather
 /// than happening the moment preparation ends.
-enum OSUpgrade {
+public enum OSUpgrade {
 
     /// Never passed, ever. `--eraseinstall` wipes every volume in the
     /// container. It has no place in an upgrade path, and naming it here is
     /// cheaper than discovering it in a bug report.
-    static let forbiddenArguments = ["--eraseinstall", "--newvolumename",
+    public static let forbiddenArguments = ["--eraseinstall", "--newvolumename",
                                      "--preservecontainer", "--stdinpass"]
 
-    static func tool(in cached: OSInstallerCache.Cached) -> URL? {
+    public static func tool(in cached: OSInstallerCache.Cached) -> URL? {
         let u = cached.url.appendingPathComponent("Contents/Resources/startosinstall")
         return FileManager.default.isExecutableFile(atPath: u.path) ? u : nil
     }
@@ -30,7 +30,7 @@ enum OSUpgrade {
     /// `--forcequitapps` is deliberately optional: it discards unsaved work in
     /// open applications, which is fine on an unattended fleet machine and
     /// rude on someone's laptop mid-sentence.
-    static func arguments(user: String,
+    public static func arguments(user: String,
                           rebootDelaySeconds: Int,
                           forceQuitApps: Bool) -> [String] {
         var a = ["--agreetolicense", "--user", user, "--passprompt"]
@@ -45,7 +45,7 @@ enum OSUpgrade {
     /// These are warnings a person should see before a process that restarts
     /// their Mac several times, not decoration: an upgrade interrupted by a
     /// flat battery is how a machine ends up in recovery.
-    static func preflight(cached: OSInstallerCache.Cached?) -> [String] {
+    public static func preflight(cached: OSInstallerCache.Cached?) -> [String] {
         var out: [String] = []
 
         guard let cached else {
@@ -73,7 +73,7 @@ enum OSUpgrade {
     }
 
     /// Anything about to run as root gets its signature checked first.
-    static func isAppleSigned(_ url: URL) -> Bool {
+    public static func isAppleSigned(_ url: URL) -> Bool {
         let p = Process()
         p.executableURL = URL(fileURLWithPath: "/usr/bin/codesign")
         p.arguments = ["-dv", "--verbose=2", url.path]
@@ -88,17 +88,17 @@ enum OSUpgrade {
             && text.contains("Software Signing")
     }
 
-    static func onACPower() -> Bool {
+    public static func onACPower() -> Bool {
         shell("/usr/bin/pmset", ["-g", "batt"]).contains("AC Power")
     }
 
-    static func batteryPercent() -> Int? {
+    public static func batteryPercent() -> Int? {
         let out = shell("/usr/bin/pmset", ["-g", "batt"])
         guard let r = out.range(of: #"\d+(?=%)"#, options: .regularExpression) else { return nil }
         return Int(out[r])
     }
 
-    static func hasTimeMachineDestination() -> Bool {
+    public static func hasTimeMachineDestination() -> Bool {
         !shell("/usr/bin/tmutil", ["destinationinfo"]).contains("No destinations configured")
     }
 
@@ -120,7 +120,7 @@ enum OSUpgrade {
     /// `--passprompt` reads from a terminal, so this cannot run inside the app
     /// — and that is the right shape anyway: the password is typed into
     /// Terminal, and MacSetup never sees it.
-    static func helperScript(tool: URL, arguments: [String], version: String) -> String {
+    public static func helperScript(tool: URL, arguments: [String], version: String) -> String {
         let quoted = arguments.map { "'\($0.replacingOccurrences(of: "'", with: "'\\''"))'" }
             .joined(separator: " ")
         return """
@@ -174,7 +174,7 @@ extension OSUpgrade {
     /// happened. `open -a` is what the generated scripts have always used, and
     /// it works; matching it here removes the discrepancy.
     @discardableResult
-    static func openInTerminal(_ script: URL) -> Bool {
+    public static func openInTerminal(_ script: URL) -> Bool {
         let p = Process()
         p.executableURL = URL(fileURLWithPath: "/usr/bin/open")
         p.arguments = ["-a", "Terminal", script.path]

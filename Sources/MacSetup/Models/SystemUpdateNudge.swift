@@ -1,4 +1,5 @@
 import Foundation
+import MacSetupCore
 
 /// Reminds the user that macOS itself is out of date.
 ///

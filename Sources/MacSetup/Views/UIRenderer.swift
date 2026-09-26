@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import MacSetupCore
 
 /// Renders the interface offscreen to PNG files.
 ///

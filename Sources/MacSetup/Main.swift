@@ -1,6 +1,7 @@
 import SwiftUI
 import Foundation
 import AppKit
+import MacSetupCore
 
 /// Entry point. Normally launches the SwiftUI app, but also answers a small
 /// command line so the same binary can be driven from a shell or an MDM script.
@@ -720,7 +721,7 @@ enum Entry {
             // asset, but the update checker did not — so Obsidian was offered
             // an Android-only 1.13.8 that would have installed 1.13.7 and
             // reported the same update forever.
-            let checkerSrc = (try? String(contentsOfFile: "Sources/MacSetup/Install/UpdateChecker.swift",
+            let checkerSrc = (try? String(contentsOfFile: "Sources/MacSetupCore/Install/UpdateChecker.swift",
                                           encoding: .utf8)) ?? ""
             if !checkerSrc.isEmpty {
                 check("the update checker resolves against the asset pattern",
@@ -825,7 +826,7 @@ enum Entry {
                 check("the full-screen screen does not dismiss on a failed check",
                       src2.contains("guard system.lastCheckSucceeded else { return }"))
             }
-            let src3 = (try? String(contentsOfFile: "Sources/MacSetup/Install/SystemUpdateChecker.swift",
+            let src3 = (try? String(contentsOfFile: "Sources/MacSetupCore/Install/SystemUpdateChecker.swift",
                                     encoding: .utf8)) ?? ""
             if !src3.isEmpty {
                 check("a failed check leaves the previous list alone rather than emptying it",

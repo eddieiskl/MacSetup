@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import MacSetupCore
 
 /// Supplies a small icon for every catalogue entry, cheapest source first:
 ///

@@ -1,5 +1,6 @@
 import SwiftUI
 import UniformTypeIdentifiers
+import MacSetupCore
 
 struct ScriptSheet: View {
     let script: String

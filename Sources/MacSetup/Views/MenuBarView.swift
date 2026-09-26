@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import MacSetupCore
 
 /// Contents of the menu bar item.
 ///

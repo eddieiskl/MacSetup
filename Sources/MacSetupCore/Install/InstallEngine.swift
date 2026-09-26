@@ -3,7 +3,7 @@ import SwiftUI
 
 // MARK: - Queue item state
 
-enum ItemState: Equatable {
+public enum ItemState: Equatable {
     case pending
     case running
     case resolving
@@ -15,11 +15,11 @@ enum ItemState: Equatable {
     case failed
     case skipped
 
-    var isTerminal: Bool {
+    public var isTerminal: Bool {
         switch self { case .done, .failed, .skipped: return true; default: return false }
     }
 
-    var label: String {
+    public var label: String {
         switch self {
         case .pending:      return "Waiting"
         case .running:      return "Starting"
@@ -34,7 +34,7 @@ enum ItemState: Equatable {
         }
     }
 
-    var symbol: String {
+    public var symbol: String {
         switch self {
         case .pending:      return "circle.dashed"
         case .running:      return "circle.dotted"
@@ -49,7 +49,7 @@ enum ItemState: Equatable {
         }
     }
 
-    var tint: Color {
+    public var tint: Color {
         switch self {
         case .done:         return .green
         case .failed:       return .red
@@ -61,28 +61,38 @@ enum ItemState: Equatable {
     }
 }
 
-struct QueueItem: Identifiable, Equatable {
-    let id: String
-    let name: String
-    let subtitle: String
-    var state: ItemState = .pending
-    var detail: String = ""
+public struct QueueItem: Identifiable, Equatable {
+    public let id: String
+    public let name: String
+    public let subtitle: String
+    public var state: ItemState = .pending
+    public var detail: String = ""
     /// Whatever the signature check actually observed, shown in the UI.
-    var signature: String = ""
+    public var signature: String = ""
+
+    public init(id: String, name: String, subtitle: String, state: ItemState = .pending,
+                detail: String = "", signature: String = "") {
+        self.id = id
+        self.name = name
+        self.subtitle = subtitle
+        self.state = state
+        self.detail = detail
+        self.signature = signature
+    }
 }
 
 // MARK: - Engine
 
 @MainActor
-final class InstallEngine: ObservableObject {
+public final class InstallEngine: ObservableObject {
 
-    @Published private(set) var items: [QueueItem] = []
-    @Published private(set) var isRunning = false
-    @Published private(set) var rawLog = ""
-    @Published private(set) var finished = false
-    @Published private(set) var summary: (ok: Int, failed: Int, skipped: Int)? = nil
-    @Published var showAuthNotice = false
-    @Published private(set) var isPaused = false
+    @Published public private(set) var items: [QueueItem] = []
+    @Published public private(set) var isRunning = false
+    @Published public private(set) var rawLog = ""
+    @Published public private(set) var finished = false
+    @Published public private(set) var summary: (ok: Int, failed: Int, skipped: Int)? = nil
+    @Published public var showAuthNotice = false
+    @Published public private(set) var isPaused = false
 
     private var process: Process?
     private var tailTask: Task<Void, Never>?
@@ -91,13 +101,15 @@ final class InstallEngine: ObservableObject {
     private var readOffset: UInt64 = 0
     private var partial = ""
 
-    var progress: Double {
+    public init() {}
+
+    public var progress: Double {
         guard !items.isEmpty else { return 0 }
         let done = items.filter { $0.state.isTerminal }.count
         return Double(done) / Double(items.count)
     }
 
-    var counts: (done: Int, failed: Int, skipped: Int, remaining: Int) {
+    public var counts: (done: Int, failed: Int, skipped: Int, remaining: Int) {
         var d = 0, f = 0, s = 0
         for i in items {
             switch i.state {
@@ -119,7 +131,7 @@ final class InstallEngine: ObservableObject {
     /// engine tails. When those two drifted apart, the elevated package batch
     /// logged to a different file and every .pkg install was reported as failed
     /// even though it had installed correctly.
-    func run(apps: [CatalogApp],
+    public func run(apps: [CatalogApp],
              tweaks: [DefaultTweak],
              webApps: [WebApp] = [],
              systemUpdates: [SystemUpdate] = [],
@@ -204,25 +216,25 @@ final class InstallEngine: ObservableObject {
 
     /// Pausing takes effect once the item in flight finishes, so a download,
     /// copy or installer is never interrupted midway.
-    func pause() {
+    public func pause() {
         guard isRunning, !isPaused, let pause = pauseURL else { return }
         FileManager.default.createFile(atPath: pause.path, contents: nil)
         isPaused = true
         appendLog("Pause requested — will hold after the current item finishes.")
     }
 
-    func resume() {
+    public func resume() {
         guard let pause = pauseURL else { return }
         try? FileManager.default.removeItem(at: pause)
         isPaused = false
         appendLog("Resumed.")
     }
 
-    func togglePause() { isPaused ? resume() : pause() }
+    public func togglePause() { isPaused ? resume() : pause() }
 
     /// Removes apps. Kept separate from `run` so an uninstall can never be
     /// triggered by the ordinary install path.
-    func runUninstall(targets: [UninstallTarget], options: ScriptOptions = ScriptOptions()) {
+    public func runUninstall(targets: [UninstallTarget], options: ScriptOptions = ScriptOptions()) {
         guard !isRunning, !targets.isEmpty else { return }
         items = targets.map {
             QueueItem(id: $0.id, name: $0.name,
@@ -270,7 +282,7 @@ final class InstallEngine: ObservableObject {
     /// Installs Apple updates through the same queue, log and prompt as apps.
     /// Filters out anything `softwareupdate` cannot install unattended, saying
     /// why. Shared by both entry points so neither can drift into attempting it.
-    static func withoutSystemReleases(_ updates: [SystemUpdate],
+    public static func withoutSystemReleases(_ updates: [SystemUpdate],
                                       log: (String) -> Void) -> [SystemUpdate] {
         let refused = updates.filter(\.isSystemRelease)
         for r in refused {
@@ -281,7 +293,7 @@ final class InstallEngine: ObservableObject {
         return updates.filter { !$0.isSystemRelease }
     }
 
-    func runSystemUpdates(_ updates: [SystemUpdate], options: ScriptOptions = ScriptOptions()) {
+    public func runSystemUpdates(_ updates: [SystemUpdate], options: ScriptOptions = ScriptOptions()) {
         guard !isRunning else { return }
         let refusedCount = updates.filter(\.isSystemRelease).count
         let updates = Self.withoutSystemReleases(updates, log: { appendLog($0) })
@@ -333,7 +345,7 @@ final class InstallEngine: ObservableObject {
         startTailing(log)
     }
 
-    func cancel() {
+    public func cancel() {
         // A paused script is sitting in a wait loop; clear the flag so it can
         // notice the termination rather than spinning.
         if let pause = pauseURL { try? FileManager.default.removeItem(at: pause) }

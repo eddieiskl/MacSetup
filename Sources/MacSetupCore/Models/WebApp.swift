@@ -2,20 +2,29 @@ import Foundation
 import AppKit
 
 /// A site installed as a standalone .app that opens in its own window.
-struct WebApp: Codable, Identifiable, Hashable {
-    let id: String
-    let name: String
-    let group: String
-    let url: String
-    let summary: String
-    let icon: String?          // explicit icon when the host serves none
+public struct WebApp: Codable, Identifiable, Hashable {
+    public let id: String
+    public let name: String
+    public let group: String
+    public let url: String
+    public let summary: String
+    public let icon: String?          // explicit icon when the host serves none
 
-    var host: String { URL(string: url)?.host ?? "" }
+    public var host: String { URL(string: url)?.host ?? "" }
 
     /// User-created entries are kept apart from the shipped catalogue.
-    var isCustom: Bool { id.hasPrefix("custom-") }
+    public var isCustom: Bool { id.hasPrefix("custom-") }
 
-    static func custom(name: String, url: String) -> WebApp {
+    public init(id: String, name: String, group: String, url: String, summary: String, icon: String?) {
+        self.id = id
+        self.name = name
+        self.group = group
+        self.url = url
+        self.summary = summary
+        self.icon = icon
+    }
+
+    public static func custom(name: String, url: String) -> WebApp {
         let slug = name.lowercased()
             .replacingOccurrences(of: "[^a-z0-9]+", with: "-", options: .regularExpression)
             .trimmingCharacters(in: CharacterSet(charactersIn: "-"))
@@ -27,19 +36,19 @@ struct WebApp: Codable, Identifiable, Hashable {
 
 // MARK: - Browsers
 
-struct BrowserInfo: Identifiable, Hashable {
-    let bundleID: String
-    let name: String
-    let path: String
+public struct BrowserInfo: Identifiable, Hashable {
+    public let bundleID: String
+    public let name: String
+    public let path: String
     /// Chromium browsers support `--app=URL`, which is what makes a real
     /// standalone window rather than just another tab.
-    let supportsAppMode: Bool
+    public let supportsAppMode: Bool
 
-    var id: String { bundleID }
+    public var id: String { bundleID }
 
     /// Path to the actual executable inside the bundle, needed because
     /// `open --args` cannot pass flags to an already-running browser.
-    var executablePath: String {
+    public var executablePath: String {
         let url = URL(fileURLWithPath: path)
         guard let bundle = Bundle(url: url),
               let exe = bundle.executableURL else {
@@ -49,7 +58,7 @@ struct BrowserInfo: Identifiable, Hashable {
     }
 }
 
-enum BrowserDetector {
+public enum BrowserDetector {
     /// Ordered by how well each one handles app mode.
     private static let known: [(String, String, Bool)] = [
         ("com.google.Chrome",           "Google Chrome",  true),
@@ -62,7 +71,7 @@ enum BrowserDetector {
         ("org.mozilla.firefox",         "Firefox",        false),
     ]
 
-    static func installed() -> [BrowserInfo] {
+    public static func installed() -> [BrowserInfo] {
         known.compactMap { bundleID, name, appMode in
             guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else { return nil }
             return BrowserInfo(bundleID: bundleID, name: name, path: url.path, supportsAppMode: appMode)
@@ -70,7 +79,7 @@ enum BrowserDetector {
     }
 
     /// The browser macOS would use for a plain https link.
-    static func systemDefault() -> BrowserInfo? {
+    public static func systemDefault() -> BrowserInfo? {
         guard let probe = URL(string: "https://example.com"),
               let appURL = NSWorkspace.shared.urlForApplication(toOpen: probe),
               let bundle = Bundle(url: appURL)?.bundleIdentifier else { return nil }

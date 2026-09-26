@@ -8,15 +8,15 @@ import UserNotifications
 /// attributes the alert to MacSetup and lets the user click it. A launchd job
 /// runs the same binary outside an app context where that framework refuses to
 /// register, so there is an AppleScript fallback for that case.
-enum Notifier {
+public enum Notifier {
 
-    static func requestPermissionIfNeeded() {
+    public static func requestPermissionIfNeeded() {
         guard Bundle.main.bundleIdentifier != nil else { return }
         UNUserNotificationCenter.current()
             .requestAuthorization(options: [.alert, .sound]) { _, _ in }
     }
 
-    static func post(title: String, body: String, id: String = UUID().uuidString) {
+    public static func post(title: String, body: String, id: String = UUID().uuidString) {
         if postViaUserNotifications(title: title, body: body, id: id) { return }
         postViaAppleScript(title: title, body: body)
     }

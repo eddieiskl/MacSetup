@@ -1,20 +1,27 @@
 import Foundation
 import AppKit
 
-enum UpdateState: Equatable {
+public enum UpdateState: Equatable {
     case upToDate(String)
     case available(installed: String, latest: String)
     case unknown(installed: String, reason: String)
 
-    var isUpdate: Bool { if case .available = self { return true }; return false }
+    public var isUpdate: Bool { if case .available = self { return true }; return false }
 }
 
-struct UpdateResult: Identifiable, Equatable {
-    let id: String            // catalogue app id
-    let name: String
-    let state: UpdateState
+public struct UpdateResult: Identifiable, Equatable {
+    public let id: String            // catalogue app id
+    public let name: String
+    public let state: UpdateState
     /// How the latest version was determined, shown so the user can judge it.
-    let via: String
+    public let via: String
+
+    public init(id: String, name: String, state: UpdateState, via: String) {
+        self.id = id
+        self.name = name
+        self.state = state
+        self.via = via
+    }
 }
 
 /// Works out which installed apps have a newer version available.
@@ -23,33 +30,35 @@ struct UpdateResult: Identifiable, Equatable {
 /// for that app. Anything it cannot establish confidently is reported as
 /// unknown rather than guessed at.
 @MainActor
-final class UpdateChecker: ObservableObject {
+public final class UpdateChecker: ObservableObject {
 
-    @Published private(set) var results: [UpdateResult] = []
-    @Published private(set) var isChecking = false
-    @Published private(set) var progress = 0.0
-    @Published private(set) var lastChecked: Date?
+    @Published public private(set) var results: [UpdateResult] = []
+    @Published public private(set) var isChecking = false
+    @Published public private(set) var progress = 0.0
+    @Published public private(set) var lastChecked: Date?
 
-    var updates: [UpdateResult] { results.filter { $0.state.isUpdate } }
-    var unknowns: [UpdateResult] { results.filter { if case .unknown = $0.state { return true }; return false } }
+    public init() {}
+
+    public var updates: [UpdateResult] { results.filter { $0.state.isUpdate } }
+    public var unknowns: [UpdateResult] { results.filter { if case .unknown = $0.state { return true }; return false } }
 
     private var brewVersions: [String: String] = [:]
 
     /// Checking on launch is what makes this useful — an admin should not have
     /// to remember to look.
-    var checkOnLaunch: Bool {
+    public var checkOnLaunch: Bool {
         get { UserDefaults.standard.object(forKey: "checkUpdatesOnLaunch") as? Bool ?? true }
         set { UserDefaults.standard.set(newValue, forKey: "checkUpdatesOnLaunch"); objectWillChange.send() }
     }
 
-    var notifyOnUpdates: Bool {
+    public var notifyOnUpdates: Bool {
         get { UserDefaults.standard.object(forKey: "notifyOnUpdates") as? Bool ?? true }
         set { UserDefaults.standard.set(newValue, forKey: "notifyOnUpdates"); objectWillChange.send() }
     }
 
     /// Runs the check quietly in the background and notifies only when there is
     /// something to say.
-    func checkInBackground(apps: [CatalogApp]) async {
+    public func checkInBackground(apps: [CatalogApp]) async {
         guard checkOnLaunch, !isChecking else { return }
         await check(apps: apps)
         guard notifyOnUpdates, !updates.isEmpty else { return }
@@ -61,7 +70,7 @@ final class UpdateChecker: ObservableObject {
                       id: "macsetup.updates")
     }
 
-    func check(apps: [CatalogApp]) async {
+    public func check(apps: [CatalogApp]) async {
         guard !isChecking else { return }
         isChecking = true
         progress = 0
@@ -162,14 +171,14 @@ final class UpdateChecker: ObservableObject {
 
     // MARK: - Sources
 
-    static func installedVersion(at url: URL) -> String? {
+    public static func installedVersion(at url: URL) -> String? {
         let plist = url.appendingPathComponent("Contents/Info.plist")
         guard let d = NSDictionary(contentsOf: plist) else { return nil }
         return (d["CFBundleShortVersionString"] as? String)
             ?? (d["CFBundleVersion"] as? String)
     }
 
-    static func sparkleFeed(at url: URL) -> String? {
+    public static func sparkleFeed(at url: URL) -> String? {
         let plist = url.appendingPathComponent("Contents/Info.plist")
         guard let d = NSDictionary(contentsOf: plist) else { return nil }
         return d["SUFeedURL"] as? String
@@ -312,7 +321,7 @@ final class UpdateChecker: ObservableObject {
     /// path segment (`/releases/3.6.4-28955b81/GitHubDesktop-arm64.zip`).
     /// Only whole segments that look like a version are trusted — scanning the
     /// entire URL would happily pull digits out of a CDN hash.
-    static func versionFromURL(_ url: URL) -> String? {
+    public static func versionFromURL(_ url: URL) -> String? {
         let name = url.lastPathComponent
         if let v = VersionCompare.extract(from: name), v.contains(".") { return v }
         let strict = #"^v?\d+(\.\d+){1,4}([-.][A-Za-z0-9]+)?$"#
@@ -372,16 +381,16 @@ final class UpdateChecker: ObservableObject {
 /// recently. `get` returns a double optional to tell "not cached" from "cached
 /// as no installable release" apart: the outer `nil` is a miss, `.some(nil)` is
 /// a confirmed cache hit that found nothing to offer.
-enum GitHubTagCache {
+public enum GitHubTagCache {
     private static let key = "githubTagCache"
-    static let ttl: TimeInterval = 6 * 3600
+    public static let ttl: TimeInterval = 6 * 3600
 
     struct Entry: Codable {
         let tag: String?
         let checked: Date
     }
 
-    static func get(_ cacheKey: String) -> String?? {
+    public static func get(_ cacheKey: String) -> String?? {
         guard let dict = UserDefaults.standard.dictionary(forKey: key),
               let raw = dict[cacheKey] as? Data,
               let entry = try? JSONDecoder().decode(Entry.self, from: raw),
@@ -390,14 +399,14 @@ enum GitHubTagCache {
         return .some(entry.tag)
     }
 
-    static func set(_ cacheKey: String, tag: String?, checked: Date = Date()) {
+    public static func set(_ cacheKey: String, tag: String?, checked: Date = Date()) {
         guard let data = try? JSONEncoder().encode(Entry(tag: tag, checked: checked)) else { return }
         var dict = UserDefaults.standard.dictionary(forKey: key) ?? [:]
         dict[cacheKey] = data
         UserDefaults.standard.set(dict, forKey: key)
     }
 
-    static func clear(_ cacheKey: String) {
+    public static func clear(_ cacheKey: String) {
         var dict = UserDefaults.standard.dictionary(forKey: key) ?? [:]
         dict.removeValue(forKey: cacheKey)
         UserDefaults.standard.set(dict, forKey: key)

@@ -1,4 +1,5 @@
 import SwiftUI
+import MacSetupCore
 
 /// Small icon for a catalogue entry. Resolves lazily, so only the cards you
 /// actually scroll past ever trigger a lookup.

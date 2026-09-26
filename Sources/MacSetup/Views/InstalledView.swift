@@ -1,4 +1,5 @@
 import SwiftUI
+import MacSetupCore
 
 struct InstalledView: View {
     @EnvironmentObject var state: AppState

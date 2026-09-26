@@ -1,4 +1,5 @@
 import SwiftUI
+import MacSetupCore
 
 struct CatalogView: View {
     @EnvironmentObject var state: AppState

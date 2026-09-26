@@ -1,25 +1,35 @@
 import Foundation
 
 /// One pending Apple update, as reported by `softwareupdate --list`.
-struct SystemUpdate: Identifiable, Hashable {
-    let label: String          // what `softwareupdate -i` expects
-    let title: String
-    let version: String
-    let sizeKiB: Int
-    let recommended: Bool
-    let requiresRestart: Bool
+public struct SystemUpdate: Identifiable, Hashable {
+    public let label: String          // what `softwareupdate -i` expects
+    public let title: String
+    public let version: String
+    public let sizeKiB: Int
+    public let recommended: Bool
+    public let requiresRestart: Bool
 
-    var id: String { label }
+    public var id: String { label }
+
+    public init(label: String, title: String, version: String, sizeKiB: Int,
+                recommended: Bool, requiresRestart: Bool) {
+        self.label = label
+        self.title = title
+        self.version = version
+        self.sizeKiB = sizeKiB
+        self.recommended = recommended
+        self.requiresRestart = requiresRestart
+    }
 
     /// A full macOS release, as opposed to Safari or Command Line Tools. These
     /// need a volume owner's credentials on Apple Silicon, so they cannot be
     /// installed or even staged without a person present.
-    var isSystemRelease: Bool {
+    public var isSystemRelease: Bool {
         let t = title.lowercased()
         return t.hasPrefix("macos") || label.lowercased().hasPrefix("macos")
     }
 
-    var sizeText: String {
+    public var sizeText: String {
         let mb = Double(sizeKiB) / 1024
         if mb >= 1024 { return String(format: "%.1f GB", mb / 1024) }
         return String(format: "%.0f MB", mb)
@@ -32,12 +42,12 @@ struct SystemUpdate: Identifiable, Hashable {
 /// Installing is a different matter: it needs root and can force a restart, so
 /// nothing here installs anything on its own.
 @MainActor
-final class SystemUpdateChecker: ObservableObject {
+public final class SystemUpdateChecker: ObservableObject {
 
-    @Published private(set) var updates: [SystemUpdate] = []
-    @Published private(set) var isChecking = false
-    @Published private(set) var lastChecked: Date?
-    @Published private(set) var lastError: String?
+    @Published public private(set) var updates: [SystemUpdate] = []
+    @Published public private(set) var isChecking = false
+    @Published public private(set) var lastChecked: Date?
+    @Published public private(set) var lastError: String?
 
     /// Whether the last check actually got an answer.
     ///
@@ -46,12 +56,14 @@ final class SystemUpdateChecker: ObservableObject {
     /// so callers silently conclude the Mac is up to date, dismiss the
     /// full-screen reminder, and discard staged updates. Everything that acts
     /// on an empty list must know whether the list is trustworthy.
-    @Published private(set) var lastCheckSucceeded = false
+    @Published public private(set) var lastCheckSucceeded = false
 
-    var restartRequired: [SystemUpdate] { updates.filter(\.requiresRestart) }
-    var safeToInstall: [SystemUpdate] { updates.filter { !$0.requiresRestart } }
+    public init() {}
 
-    func check() async {
+    public var restartRequired: [SystemUpdate] { updates.filter(\.requiresRestart) }
+    public var safeToInstall: [SystemUpdate] { updates.filter { !$0.requiresRestart } }
+
+    public func check() async {
         guard !isChecking else { return }
         isChecking = true
         lastError = nil
@@ -92,7 +104,7 @@ final class SystemUpdateChecker: ObservableObject {
     }
 
     /// Output pairs a `* Label:` line with an indented detail line.
-    static func parse(_ text: String) -> [SystemUpdate] {
+    public static func parse(_ text: String) -> [SystemUpdate] {
         var out: [SystemUpdate] = []
         let lines = text.components(separatedBy: "\n")
         var pendingLabel: String?

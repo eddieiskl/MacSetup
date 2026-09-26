@@ -9,8 +9,13 @@ let package = Package(
             name: "WebAppHost",
             path: "Sources/WebAppHost"
         ),
+        .target(
+            name: "MacSetupCore",
+            path: "Sources/MacSetupCore"
+        ),
         .executableTarget(
             name: "MacSetup",
+            dependencies: ["MacSetupCore"],
             path: "Sources/MacSetup",
             resources: [.copy("Resources/catalog.json"), .copy("Resources/about.json")],
             swiftSettings: [.unsafeFlags(["-parse-as-library"])]

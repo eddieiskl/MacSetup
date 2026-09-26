@@ -1,4 +1,5 @@
 import SwiftUI
+import MacSetupCore
 
 /// Removing apps sits behind its own confirmation and never shares a button
 /// with installing.

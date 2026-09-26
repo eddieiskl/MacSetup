@@ -2,29 +2,29 @@ import Foundation
 
 // MARK: - Catalog schema
 
-struct Catalog: Codable {
-    let schemaVersion: Int
-    let updated: String
-    let categories: [AppCategory]
-    let apps: [CatalogApp]
-    let systemDefaults: [DefaultTweak]
+public struct Catalog: Codable {
+    public let schemaVersion: Int
+    public let updated: String
+    public let categories: [AppCategory]
+    public let apps: [CatalogApp]
+    public let systemDefaults: [DefaultTweak]
     /// Optional so an older catalog.json still decodes.
-    let webApps: [WebApp]?
+    public let webApps: [WebApp]?
     /// Optional so an older catalog.json still decodes.
-    let roleTemplates: [RoleTemplate]?
+    public let roleTemplates: [RoleTemplate]?
 
-    var webAppList: [WebApp] { webApps ?? [] }
-    var roleTemplateList: [RoleTemplate] { roleTemplates ?? [] }
+    public var webAppList: [WebApp] { webApps ?? [] }
+    public var roleTemplateList: [RoleTemplate] { roleTemplates ?? [] }
 }
 
-struct AppCategory: Codable, Identifiable, Hashable {
-    let id: String
-    let name: String
-    let symbol: String
-    let order: Int
+public struct AppCategory: Codable, Identifiable, Hashable {
+    public let id: String
+    public let name: String
+    public let symbol: String
+    public let order: Int
 }
 
-enum SourceKind: String, Codable {
+public enum SourceKind: String, Codable {
     case direct     // vendor's own download URL
     case github     // resolved from a GitHub release
     case brew       // Homebrew cask or formula
@@ -32,28 +32,28 @@ enum SourceKind: String, Codable {
 }
 
 /// Where an app comes from and what shape the download is.
-struct AppSource: Codable, Hashable {
-    let kind: SourceKind
-    var url: String?
-    var urlArm64: String?
-    var urlX86: String?
-    var format: String?        // dmg | pkg | zip
-    var repo: String?          // owner/name for .github
-    var assetPattern: String?  // regex matched against release asset names
-    var cask: String?
-    var formula: String?
-    var verify: String?        // command that must exist on PATH afterwards
-    var env: [String: String]?
+public struct AppSource: Codable, Hashable {
+    public let kind: SourceKind
+    public var url: String?
+    public var urlArm64: String?
+    public var urlX86: String?
+    public var format: String?        // dmg | pkg | zip
+    public var repo: String?          // owner/name for .github
+    public var assetPattern: String?  // regex matched against release asset names
+    public var cask: String?
+    public var formula: String?
+    public var verify: String?        // command that must exist on PATH afterwards
+    public var env: [String: String]?
 
     /// The URL to fetch on this machine's architecture.
-    func resolvedURL(arch: Arch) -> String? {
+    public func resolvedURL(arch: Arch) -> String? {
         if let url { return url }
         return arch == .appleSilicon ? urlArm64 : urlX86
     }
 
-    var needsRoot: Bool { format == "pkg" }
+    public var needsRoot: Bool { format == "pkg" }
 
-    var shortLabel: String {
+    public var shortLabel: String {
         switch kind {
         case .direct: return "Direct from \(hostname ?? "vendor")"
         case .github: return "GitHub release · \(repo ?? "")"
@@ -68,77 +68,77 @@ struct AppSource: Codable, Hashable {
     }
 }
 
-struct CatalogApp: Codable, Identifiable, Hashable {
-    let id: String
-    let name: String
-    let category: String
-    let vendor: String
-    let summary: String
-    let homepage: String
-    let bundleId: String?
-    let teamId: String?
-    let tags: [String]
-    let license: String
+public struct CatalogApp: Codable, Identifiable, Hashable {
+    public let id: String
+    public let name: String
+    public let category: String
+    public let vendor: String
+    public let summary: String
+    public let homepage: String
+    public let bundleId: String?
+    public let teamId: String?
+    public let tags: [String]
+    public let license: String
     /// Explicit icon URL. Needed whenever a host favicon would be shared with
     /// another entry — every microsoft.com app would otherwise look identical.
     /// The literal "none" forces the generated monogram instead.
-    let icon: String?
+    public let icon: String?
     /// Set when the app ships its own updater, so the update check can say so
     /// instead of reporting an unhelpful "unknown".
-    let selfUpdates: String?
+    public let selfUpdates: String?
     /// True when Homebrew will shell out to sudo for this cask (its artifact is
     /// a .pkg). Those cannot prompt when the run is launched from the app.
-    let needsAdmin: Bool?
+    public let needsAdmin: Bool?
     /// True when the Homebrew cask runs its own installer program rather than
     /// shipping a .pkg. Those cannot be driven without a terminal; a .pkg can be
     /// fetched by Homebrew and installed through the elevated batch instead.
-    let caskInstaller: Bool?
-    let source: AppSource
-    let fallback: AppSource?
+    public let caskInstaller: Bool?
+    public let source: AppSource
+    public let fallback: AppSource?
 
     /// Everything the search field matches against.
-    var searchHaystack: String {
+    public var searchHaystack: String {
         ([name, vendor, summary, id] + tags).joined(separator: " ").lowercased()
     }
 
-    var needsRoot: Bool {
+    public var needsRoot: Bool {
         source.needsRoot || (needsAdmin ?? false) || (source.kind == .script && id == "homebrew")
     }
 
     /// A Homebrew cask that installs a .pkg needs a terminal for its sudo
     /// prompt, so it cannot be installed from inside the app.
     /// Only installer-script casks truly need a terminal.
-    var needsTerminal: Bool { (caskInstaller ?? false) && source.kind == .brew }
+    public var needsTerminal: Bool { (caskInstaller ?? false) && source.kind == .brew }
 
     /// A cask that ships a .pkg: fetch it with Homebrew, install it elevated.
-    var isBrewPackage: Bool {
+    public var isBrewPackage: Bool {
         source.kind == .brew && (needsAdmin ?? false) && !(caskInstaller ?? false)
             && source.cask != nil
     }
 }
 
-struct DefaultTweak: Codable, Identifiable, Hashable {
-    let id: String
-    let group: String
-    let name: String
-    let detail: String
-    let command: String
-    let revert: String
-    let restart: [String]
-    let recommended: Bool
+public struct DefaultTweak: Codable, Identifiable, Hashable {
+    public let id: String
+    public let group: String
+    public let name: String
+    public let detail: String
+    public let command: String
+    public let revert: String
+    public let restart: [String]
+    public let recommended: Bool
 }
 
 /// One thing the uninstaller can remove. Built either from a catalogue entry
 /// (so Homebrew and package handling are known) or from a bare bundle found on
 /// disk, which can only be moved to the Trash.
-struct UninstallTarget: Identifiable, Hashable {
-    let id: String
-    let name: String
-    let bundleID: String
-    let kind: String      // brew | pkg | app
-    let token: String     // Homebrew cask or formula, when kind == brew
+public struct UninstallTarget: Identifiable, Hashable {
+    public let id: String
+    public let name: String
+    public let bundleID: String
+    public let kind: String      // brew | pkg | app
+    public let token: String     // Homebrew cask or formula, when kind == brew
 
-    init(_ app: CatalogApp) {
+    public init(_ app: CatalogApp) {
         id = app.id
         name = app.name
         bundleID = app.bundleId ?? ""
@@ -148,7 +148,7 @@ struct UninstallTarget: Identifiable, Hashable {
         token = app.source.cask ?? app.source.formula ?? ""
     }
 
-    init(bundleName: String, bundleID: String) {
+    public init(bundleName: String, bundleID: String) {
         id = "bundle:\(bundleID.isEmpty ? bundleName : bundleID)"
         name = bundleName
         self.bundleID = bundleID
@@ -158,24 +158,34 @@ struct UninstallTarget: Identifiable, Hashable {
 }
 
 /// An application found on this Mac.
-struct InstalledEntry: Identifiable, Hashable {
-    let id: String
-    let name: String
-    let bundleID: String
-    let version: String
-    let path: String
-    let catalogID: String?
+public struct InstalledEntry: Identifiable, Hashable {
+    public let id: String
+    public let name: String
+    public let bundleID: String
+    public let version: String
+    public let path: String
+    public let catalogID: String?
 
-    var inCatalogue: Bool { catalogID != nil }
+    public var inCatalogue: Bool { catalogID != nil }
+
+    public init(id: String, name: String, bundleID: String, version: String,
+                path: String, catalogID: String?) {
+        self.id = id
+        self.name = name
+        self.bundleID = bundleID
+        self.version = version
+        self.path = path
+        self.catalogID = catalogID
+    }
 }
 
 // MARK: - Architecture
 
-enum Arch: String {
+public enum Arch: String {
     case appleSilicon = "arm64"
     case intel = "x86_64"
 
-    static var current: Arch {
+    public static var current: Arch {
         var info = utsname()
         uname(&info)
         let machine = withUnsafeBytes(of: &info.machine) { raw -> String in
@@ -185,15 +195,15 @@ enum Arch: String {
         return machine.hasPrefix("arm") ? .appleSilicon : .intel
     }
 
-    var display: String { self == .appleSilicon ? "Apple Silicon" : "Intel" }
+    public var display: String { self == .appleSilicon ? "Apple Silicon" : "Intel" }
 }
 
 // MARK: - Loading
 
-enum CatalogLoader {
+public enum CatalogLoader {
     /// Looks in the SPM resource bundle first, then the app bundle, then alongside the
     /// executable — so the same code works under `swift run` and inside MacSetup.app.
-    static func load() throws -> Catalog {
+    public static func load() throws -> Catalog {
         // Deliberately does NOT touch Bundle.module. SwiftPM's generated accessor
         // calls fatalError when it cannot find its resource bundle, and it looks
         // only in the app bundle root and at an absolute path baked in at build
@@ -218,9 +228,9 @@ enum CatalogLoader {
     }
 }
 
-enum CatalogError: LocalizedError {
+public enum CatalogError: LocalizedError {
     case notFound(searched: [String])
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .notFound(let searched):
             return "catalog.json could not be found. Looked in:\n" + searched.joined(separator: "\n")

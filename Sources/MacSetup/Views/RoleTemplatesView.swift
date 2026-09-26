@@ -1,4 +1,5 @@
 import SwiftUI
+import MacSetupCore
 
 struct RoleTemplatesView: View {
     @EnvironmentObject var state: AppState

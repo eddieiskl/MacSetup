@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import Combine
+import MacSetupCore
 
 enum SortOrder: String, CaseIterable, Identifiable {
     case name = "Name"
@@ -346,45 +347,11 @@ final class AppState: ObservableObject {
         return false
     }
 
-    /// Reads every application bundle once, which is far faster and more
-    /// reliable than shelling out to mdfind per app. System applications are
-    /// skipped — they are not ours to remove.
+    /// Delegates to `MachineInventory` (MacSetupCore) so the app, the CLI,
+    /// Desired State and Doctor all see the same installed-app scan.
     func scanInstalled() async {
-        let dirs = ["/Applications", "\(NSHomeDirectory())/Applications", "/Applications/Utilities"]
-        struct Raw: Sendable { let name: String; let bundleID: String; let version: String; let path: String }
-
-        let raw: [Raw] = await Task.detached(priority: .utility) {
-            var out: [Raw] = []
-            let fm = FileManager.default
-            for dir in dirs {
-                guard let entries = try? fm.contentsOfDirectory(atPath: dir) else { continue }
-                for entry in entries where entry.hasSuffix(".app") {
-                    let path = "\(dir)/\(entry)"
-                    let plist = "\(path)/Contents/Info.plist"
-                    let d = NSDictionary(contentsOfFile: plist)
-                    let bundle = (d?["CFBundleIdentifier"] as? String) ?? ""
-                    let version = (d?["CFBundleShortVersionString"] as? String)
-                        ?? (d?["CFBundleVersion"] as? String) ?? "—"
-                    let name = String(entry.dropLast(4))
-                    out.append(Raw(name: name, bundleID: bundle, version: version, path: path))
-                }
-            }
-            return out
-        }.value
-
-        installedBundleIDs = Set(raw.map(\.bundleID).filter { !$0.isEmpty })
-
-        let byBundle = Dictionary(allApps.compactMap { app -> (String, String)? in
-            guard let b = app.bundleId else { return nil }
-            return (b, app.id)
-        }, uniquingKeysWith: { a, _ in a })
-
-        installedEntries = raw.map { r in
-            InstalledEntry(id: r.path, name: r.name, bundleID: r.bundleID,
-                           version: r.version, path: r.path,
-                           catalogID: byBundle[r.bundleID])
-        }
-        .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+        installedEntries = await MachineInventory.scan(catalogApps: allApps)
+        installedBundleIDs = Set(installedEntries.map(\.bundleID).filter { !$0.isEmpty })
     }
 
     /// What the Installed pane shows, after its own search and filter.

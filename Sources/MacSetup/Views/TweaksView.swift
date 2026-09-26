@@ -1,4 +1,5 @@
 import SwiftUI
+import MacSetupCore
 
 struct TweaksView: View {
     @EnvironmentObject var state: AppState

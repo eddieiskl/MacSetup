@@ -1,4 +1,5 @@
 import Foundation
+import MacSetupCore
 
 /// An Apple update that has been downloaded but not installed, because
 /// installing it would restart the Mac.

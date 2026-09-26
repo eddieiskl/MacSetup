@@ -1,4 +1,5 @@
 import SwiftUI
+import MacSetupCore
 
 enum Pane: Hashable {
     case all

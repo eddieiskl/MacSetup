@@ -582,7 +582,7 @@ fi
 # Regression: the loader must never touch Bundle.module. SwiftPM's accessor
 # fatalErrors when its resource bundle is missing, and it looks at an absolute
 # path baked in at build time — so a copy on any other Mac crashed on launch.
-if grep -v '^[[:space:]]*//' Sources/MacSetup/Models/Catalog.swift | grep -q 'Bundle\.module'; then
+if grep -v '^[[:space:]]*//' Sources/MacSetupCore/Models/Catalog.swift | grep -q 'Bundle\.module'; then
   bad "catalogue loader does not depend on Bundle.module" \
       "referencing it crashes a distributed copy on launch"
 else
@@ -853,12 +853,12 @@ fi
 # must never trigger a restart: staging an update is one decision, rebooting
 # someone's Mac is another.
 SUBAD=""
-grep -q 'softwareupdate' Sources/MacSetup/Install/SystemUpdateChecker.swift || SUBAD="$SUBAD no-softwareupdate"
-grep -q -- '"--list"' Sources/MacSetup/Install/SystemUpdateChecker.swift || SUBAD="$SUBAD checker-not-list-only"
-grep -q 'softwareupdate -i' Sources/MacSetup/Install/ScriptPrelude.swift || SUBAD="$SUBAD no-install-path"
-grep -qE 'softwareupdate[^|]*--restart|softwareupdate[^|]*-r ' Sources/MacSetup/Install/ScriptPrelude.swift \
+grep -q 'softwareupdate' Sources/MacSetupCore/Install/SystemUpdateChecker.swift || SUBAD="$SUBAD no-softwareupdate"
+grep -q -- '"--list"' Sources/MacSetupCore/Install/SystemUpdateChecker.swift || SUBAD="$SUBAD checker-not-list-only"
+grep -q 'softwareupdate -i' Sources/MacSetupCore/Install/ScriptPrelude.swift || SUBAD="$SUBAD no-install-path"
+grep -qE 'softwareupdate[^|]*--restart|softwareupdate[^|]*-r ' Sources/MacSetupCore/Install/ScriptPrelude.swift \
   && SUBAD="$SUBAD RESTARTS-THE-MAC"
-grep -q 'msu_queue_system' Sources/MacSetup/Install/ScriptPrelude.swift || SUBAD="$SUBAD not-in-elevated-batch"
+grep -q 'msu_queue_system' Sources/MacSetupCore/Install/ScriptPrelude.swift || SUBAD="$SUBAD not-in-elevated-batch"
 if [ -z "$SUBAD" ]; then
   ok "Apple updates install via the elevated batch and never restart the Mac"
 else
@@ -869,7 +869,7 @@ fi
 # apps, not have a parallel flow of their own.
 UNIBAD=""
 grep -q 'selectedSystemUpdates' Sources/MacSetup/Models/AppState.swift || UNIBAD="$UNIBAD selection-not-shared"
-grep -q 'systemUpdates: \[SystemUpdate\]' Sources/MacSetup/Install/ScriptGenerator.swift || UNIBAD="$UNIBAD generator-missing"
+grep -q 'systemUpdates: \[SystemUpdate\]' Sources/MacSetupCore/Install/ScriptGenerator.swift || UNIBAD="$UNIBAD generator-missing"
 grep -q 'systemUpdates: system.updates.filter' Sources/MacSetup/Views/ContentView.swift || UNIBAD="$UNIBAD actionbar-missing"
 grep -q 'Install \\(total) Item' Sources/MacSetup/Views/ContentView.swift || UNIBAD="$UNIBAD no-single-button"
 if [ -z "$UNIBAD" ]; then
@@ -926,9 +926,9 @@ fi
 # which this tool will not handle. Starting a 17 GB download that is certain to
 # fail authentication is worse than not starting it.
 SRBAD=""
-grep -q 'isSystemRelease' Sources/MacSetup/Install/SystemUpdateChecker.swift || SRBAD="$SRBAD no-flag"
+grep -q 'isSystemRelease' Sources/MacSetupCore/Install/SystemUpdateChecker.swift || SRBAD="$SRBAD no-flag"
 grep -q '!\$0.isSystemRelease' Sources/MacSetup/Main.swift || SRBAD="$SRBAD still-stages-releases"
-grep -q 'volume owner password' Sources/MacSetup/Install/ScriptPrelude.swift || SRBAD="$SRBAD no-explanation"
+grep -q 'volume owner password' Sources/MacSetupCore/Install/ScriptPrelude.swift || SRBAD="$SRBAD no-explanation"
 if [ -z "$SRBAD" ]; then
   ok "macOS releases are not downloaded unattended, and the reason is reported"
 else
@@ -938,8 +938,8 @@ fi
 # Restart-required updates are staged overnight and offered at the next unlock,
 # never installed while nobody is present.
 STBAD=""
-grep -q 'softwareupdate -d' Sources/MacSetup/Install/ScriptPrelude.swift || STBAD="$STBAD no-download-path"
-grep -q 'msu_queue_system_download' Sources/MacSetup/Install/ScriptGenerator.swift || STBAD="$STBAD generator-missing"
+grep -q 'softwareupdate -d' Sources/MacSetupCore/Install/ScriptPrelude.swift || STBAD="$STBAD no-download-path"
+grep -q 'msu_queue_system_download' Sources/MacSetupCore/Install/ScriptGenerator.swift || STBAD="$STBAD generator-missing"
 grep -q 'com.apple.screenIsUnlocked' Sources/MacSetup/Models/UnlockWatcher.swift || STBAD="$STBAD no-unlock-observer"
 grep -q 'func reconcile' Sources/MacSetup/Models/PendingRestart.swift || STBAD="$STBAD no-reconcile"
 if [ -z "$STBAD" ]; then
@@ -954,7 +954,7 @@ APBAD=""
 grep -q 'allowPrompt' Sources/MacSetup/Main.swift || APBAD="$APBAD no-allow-prompt"
 grep -q 'opts.authTimeout = 600' Sources/MacSetup/Main.swift || APBAD="$APBAD no-dialog-timeout"
 grep -q 'filter { !\$0.requiresRestart }' Sources/MacSetup/Main.swift || APBAD="$APBAD installs-restart-updates"
-grep -q 'MSU_AUTH_TIMEOUT' Sources/MacSetup/Install/ScriptPrelude.swift || APBAD="$APBAD no-watchdog"
+grep -q 'MSU_AUTH_TIMEOUT' Sources/MacSetupCore/Install/ScriptPrelude.swift || APBAD="$APBAD no-watchdog"
 if [ -z "$APBAD" ]; then
   ok "scheduled runs may prompt, with a timeout, and never install restart updates"
 else
@@ -977,7 +977,7 @@ else
 fi
 
 # The checker itself must stay read-only — only the batch installs.
-if grep -qE '"-i"|"--install"' Sources/MacSetup/Install/SystemUpdateChecker.swift; then
+if grep -qE '"-i"|"--install"' Sources/MacSetupCore/Install/SystemUpdateChecker.swift; then
   bad "the update checker stays read-only"
 else
   ok "the update checker stays read-only"
@@ -1005,9 +1005,9 @@ grep -q CLEAN /tmp/st-su.txt && ok "software update output shape is understood" 
 # (kMDItemAppStoreHasReceipt) is no longer populated on current macOS, so
 # reindexing cannot fix it and reporting "up to date" would be wrong.
 ASBAD=""
-grep -q '_MASReceipt/receipt' Sources/MacSetup/Install/AppStoreChecker.swift || ASBAD="$ASBAD no-receipt-scan"
-grep -q 'case cannotDetect' Sources/MacSetup/Install/AppStoreChecker.swift || ASBAD="$ASBAD no-cannotDetect-state"
-grep -q 'MAS_NO_AUTO_INDEX' Sources/MacSetup/Install/AppStoreChecker.swift || ASBAD="$ASBAD no-index-suppression"
+grep -q '_MASReceipt/receipt' Sources/MacSetupCore/Install/AppStoreChecker.swift || ASBAD="$ASBAD no-receipt-scan"
+grep -q 'case cannotDetect' Sources/MacSetupCore/Install/AppStoreChecker.swift || ASBAD="$ASBAD no-cannotDetect-state"
+grep -q 'MAS_NO_AUTO_INDEX' Sources/MacSetupCore/Install/AppStoreChecker.swift || ASBAD="$ASBAD no-index-suppression"
 if [ -z "$ASBAD" ]; then
   ok "App Store apps are found by receipt, and undetectable versions are said so"
 else

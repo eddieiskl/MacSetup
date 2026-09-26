@@ -8,12 +8,12 @@ import Foundation
 /// Jamf logs each run against the computer record — which is the event trail an
 /// MDM can actually keep, since Jamf has no endpoint for ingesting arbitrary
 /// events.
-enum JamfExport {
+public enum JamfExport {
 
     /// A self-contained script to paste into Settings > Computer Management >
     /// Scripts. Parameter 4 overrides the app list, so one script can serve
     /// every policy rather than creating 160 near-identical ones.
-    static func policyScript(apps: [CatalogApp], tweaks: [DefaultTweak],
+    public static func policyScript(apps: [CatalogApp], tweaks: [DefaultTweak],
                              options: ScriptOptions = ScriptOptions()) -> String {
         var opts = options
         opts.logPath = "/var/log/macsetup.log"
@@ -73,7 +73,7 @@ enum JamfExport {
 
     /// Extension Attribute: reports the last run's results into the computer
     /// record, so Jamf can build Smart Groups from it.
-    static func extensionAttribute() -> String {
+    public static func extensionAttribute() -> String {
         """
         #!/bin/bash
         #

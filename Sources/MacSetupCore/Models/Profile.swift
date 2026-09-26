@@ -1,29 +1,29 @@
 import Foundation
 
 /// A saved selection of apps and tweaks, re-applicable on the next Mac.
-struct Profile: Codable, Identifiable, Hashable {
-    var id: UUID = UUID()
-    var name: String
-    var notes: String = ""
-    var appIDs: [String]
-    var tweakIDs: [String]
-    var webAppIDs: [String] = []
+public struct Profile: Codable, Identifiable, Hashable {
+    public var id: UUID = UUID()
+    public var name: String
+    public var notes: String = ""
+    public var appIDs: [String]
+    public var tweakIDs: [String]
+    public var webAppIDs: [String] = []
     /// Custom web apps travel inside the profile so an imported one still works
     /// on a machine that has never seen it.
-    var customWebApps: [WebApp] = []
+    public var customWebApps: [WebApp] = []
     /// Run options travel with the profile, so a "Business Baseline" applied on
     /// another Mac behaves the same way rather than reverting to defaults.
-    var options: SavedOptions? = nil
-    var created: Date = Date()
+    public var options: SavedOptions? = nil
+    public var created: Date = Date()
 
-    struct SavedOptions: Codable, Hashable {
-        var verifySignatures: Bool
-        var strictVerify: Bool
-        var skipInstalled: Bool
-        var installToUserApplications: Bool
-        var standaloneWebApps: Bool
+    public struct SavedOptions: Codable, Hashable {
+        public var verifySignatures: Bool
+        public var strictVerify: Bool
+        public var skipInstalled: Bool
+        public var installToUserApplications: Bool
+        public var standaloneWebApps: Bool
 
-        init(_ o: ScriptOptions) {
+        public init(_ o: ScriptOptions) {
             verifySignatures = o.verifySignatures
             strictVerify = o.strictVerify
             skipInstalled = o.skipInstalled
@@ -31,7 +31,7 @@ struct Profile: Codable, Identifiable, Hashable {
             standaloneWebApps = o.standaloneWebApps
         }
 
-        func apply(to o: inout ScriptOptions) {
+        public func apply(to o: inout ScriptOptions) {
             o.verifySignatures = verifySignatures
             o.strictVerify = strictVerify
             o.skipInstalled = skipInstalled
@@ -45,7 +45,7 @@ struct Profile: Codable, Identifiable, Hashable {
         case id, name, notes, appIDs, tweakIDs, webAppIDs, customWebApps, options, created
     }
 
-    init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = try c.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
         name = try c.decode(String.self, forKey: .name)
@@ -60,29 +60,44 @@ struct Profile: Codable, Identifiable, Hashable {
 
     /// Exchange format written by "Export profile…" — deliberately plain so it
     /// can be committed to a repo or handed to a colleague.
-    struct Document: Codable {
-        let kind: String
-        let version: Int
-        let name: String
-        let notes: String
-        let apps: [String]
-        let tweaks: [String]
-        let webApps: [String]?
-        let customWebApps: [WebApp]?
-        let options: SavedOptions?
-        let exported: Date
+    public struct Document: Codable {
+        public let kind: String
+        public let version: Int
+        public let name: String
+        public let notes: String
+        public let apps: [String]
+        public let tweaks: [String]
+        public let webApps: [String]?
+        public let customWebApps: [WebApp]?
+        public let options: SavedOptions?
+        public let exported: Date
+
+        public init(kind: String, version: Int, name: String, notes: String, apps: [String],
+                    tweaks: [String], webApps: [String]?, customWebApps: [WebApp]?,
+                    options: SavedOptions?, exported: Date) {
+            self.kind = kind
+            self.version = version
+            self.name = name
+            self.notes = notes
+            self.apps = apps
+            self.tweaks = tweaks
+            self.webApps = webApps
+            self.customWebApps = customWebApps
+            self.options = options
+            self.exported = exported
+        }
     }
 
-    var document: Document {
+    public var document: Document {
         Document(kind: "macsetup.profile", version: 3, name: name,
                  notes: notes, apps: appIDs, tweaks: tweakIDs,
                  webApps: webAppIDs, customWebApps: customWebApps,
                  options: options, exported: Date())
     }
 
-    init(name: String, notes: String = "", appIDs: [String], tweakIDs: [String],
-         webAppIDs: [String] = [], customWebApps: [WebApp] = [],
-         options: SavedOptions? = nil) {
+    public init(name: String, notes: String = "", appIDs: [String], tweakIDs: [String],
+                webAppIDs: [String] = [], customWebApps: [WebApp] = [],
+                options: SavedOptions? = nil) {
         self.options = options
         self.name = name
         self.notes = notes
@@ -92,7 +107,7 @@ struct Profile: Codable, Identifiable, Hashable {
         self.customWebApps = customWebApps
     }
 
-    init(document d: Document) {
+    public init(document d: Document) {
         self.name = d.name
         self.notes = d.notes
         self.appIDs = d.apps
@@ -104,8 +119,8 @@ struct Profile: Codable, Identifiable, Hashable {
 }
 
 @MainActor
-final class ProfileStore: ObservableObject {
-    @Published private(set) var profiles: [Profile] = []
+public final class ProfileStore: ObservableObject {
+    @Published public private(set) var profiles: [Profile] = []
 
     private let url: URL = {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -114,9 +129,9 @@ final class ProfileStore: ObservableObject {
         return base.appendingPathComponent("profiles.json")
     }()
 
-    init() { load() }
+    public init() { load() }
 
-    func load() {
+    public func load() {
         guard let data = try? Data(contentsOf: url),
               let decoded = try? JSONDecoder().decode([Profile].self, from: data) else { return }
         profiles = decoded
@@ -128,18 +143,18 @@ final class ProfileStore: ObservableObject {
         if let data = try? enc.encode(profiles) { try? data.write(to: url, options: .atomic) }
     }
 
-    func save(_ profile: Profile) {
+    public func save(_ profile: Profile) {
         if let i = profiles.firstIndex(where: { $0.id == profile.id }) { profiles[i] = profile }
         else { profiles.append(profile) }
         persist()
     }
 
-    func delete(_ profile: Profile) {
+    public func delete(_ profile: Profile) {
         profiles.removeAll { $0.id == profile.id }
         persist()
     }
 
-    func rename(_ profile: Profile, to name: String) {
+    public func rename(_ profile: Profile, to name: String) {
         guard let i = profiles.firstIndex(where: { $0.id == profile.id }) else { return }
         profiles[i].name = name
         persist()
@@ -147,7 +162,7 @@ final class ProfileStore: ObservableObject {
 
     // MARK: Import / export
 
-    func export(_ profile: Profile, to url: URL) throws {
+    public func export(_ profile: Profile, to url: URL) throws {
         let enc = JSONEncoder()
         enc.outputFormatting = [.prettyPrinted, .sortedKeys]
         enc.dateEncodingStrategy = .iso8601
@@ -155,7 +170,7 @@ final class ProfileStore: ObservableObject {
     }
 
     @discardableResult
-    func importProfile(from url: URL) throws -> Profile {
+    public func importProfile(from url: URL) throws -> Profile {
         let dec = JSONDecoder()
         dec.dateDecodingStrategy = .iso8601
         let doc = try dec.decode(Profile.Document.self, from: Data(contentsOf: url))
@@ -167,7 +182,7 @@ final class ProfileStore: ObservableObject {
     }
 }
 
-enum ProfileError: LocalizedError {
+public enum ProfileError: LocalizedError {
     case notAProfile
-    var errorDescription: String? { "That file is not a MacSetup profile." }
+    public var errorDescription: String? { "That file is not a MacSetup profile." }
 }

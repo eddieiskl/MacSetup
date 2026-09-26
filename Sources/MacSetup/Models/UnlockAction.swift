@@ -1,5 +1,6 @@
 import Foundation
 import AppKit
+import MacSetupCore
 
 /// What should happen when the user comes back to the Mac and something is
 /// waiting.

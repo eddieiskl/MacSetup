@@ -13,19 +13,25 @@ import AppKit
 ///
 /// So the 18 GB wait can happen overnight, and what is left for the user is
 /// the part only they can do.
-enum OSInstallerCache {
+public enum OSInstallerCache {
 
-    struct Cached {
-        let url: URL
-        let version: String
-        let sizeBytes: Int64
-        var sizeText: String {
+    public struct Cached {
+        public let url: URL
+        public let version: String
+        public let sizeBytes: Int64
+        public var sizeText: String {
             ByteCountFormatter.string(fromByteCount: sizeBytes, countStyle: .file)
+        }
+
+        public init(url: URL, version: String, sizeBytes: Int64) {
+            self.url = url
+            self.version = version
+            self.sizeBytes = sizeBytes
         }
     }
 
     /// Any macOS installer already sitting in /Applications.
-    static func cached() -> [Cached] {
+    public static func cached() -> [Cached] {
         let fm = FileManager.default
         let apps = (try? fm.contentsOfDirectory(atPath: "/Applications")) ?? []
         var out: [Cached] = []
@@ -50,7 +56,7 @@ enum OSInstallerCache {
     /// The payload every real installer carries. Without it the app is a stub:
     /// it looks like an installer, launches like one, and then tries to
     /// download the whole release at the worst possible moment.
-    static func isComplete(_ c: Cached) -> Bool {
+    public static func isComplete(_ c: Cached) -> Bool {
         let shared = c.url.appendingPathComponent("Contents/SharedSupport")
         let dmg = shared.appendingPathComponent("SharedSupport.dmg")
         guard FileManager.default.fileExists(atPath: dmg.path) else { return false }
@@ -65,7 +71,7 @@ enum OSInstallerCache {
     /// macOS would look ready while installing the wrong thing; and an
     /// interrupted fetch leaves a ~30 MB stub in /Applications that satisfies
     /// a version check while containing nothing at all.
-    static func cached(matching update: SystemUpdate) -> Cached? {
+    public static func cached(matching update: SystemUpdate) -> Cached? {
         cached().first {
             VersionCompare.compare(installed: $0.version, latest: update.version) == .same
             && isComplete($0)
@@ -74,7 +80,7 @@ enum OSInstallerCache {
 
     /// A stub or half-written installer, which should be removed before
     /// fetching again rather than left to mislead.
-    static func incomplete(matching update: SystemUpdate) -> Cached? {
+    public static func incomplete(matching update: SystemUpdate) -> Cached? {
         cached().first {
             VersionCompare.compare(installed: $0.version, latest: update.version) == .same
             && !isComplete($0)
@@ -93,7 +99,7 @@ enum OSInstallerCache {
         return total
     }
 
-    static func freeBytes() -> Int64 {
+    public static func freeBytes() -> Int64 {
         let v = try? URL(fileURLWithPath: "/").resourceValues(
             forKeys: [.volumeAvailableCapacityForImportantUsageKey])
         return v?.volumeAvailableCapacityForImportantUsage ?? 0
@@ -101,14 +107,14 @@ enum OSInstallerCache {
 
     /// Refuses rather than filling the disk. An installer that half-downloads
     /// overnight and leaves no room to log in is worse than no installer.
-    static func hasRoomFor(sizeKiB: Int, headroomGB: Int64 = 15) -> Bool {
+    public static func hasRoomFor(sizeKiB: Int, headroomGB: Int64 = 15) -> Bool {
         let need = Int64(sizeKiB) * 1024 + headroomGB * 1_000_000_000
         return freeBytes() > need
     }
 
     /// The command that does the download. Kept in one place so the CLI, the
     /// schedule and the docs cannot drift apart.
-    static func fetchArguments(version: String) -> [String] {
+    public static func fetchArguments(version: String) -> [String] {
         ["--fetch-full-installer", "--full-installer-version", version]
     }
 
@@ -123,7 +129,7 @@ enum OSInstallerCache {
     /// In a Terminal window the user sees Apple's own percentage, can stop it
     /// with control-C, and can run it again. No guessing, and nothing to get
     /// wrong.
-    static func fetchScript(version: String, sizeText: String) -> String {
+    public static func fetchScript(version: String, sizeText: String) -> String {
         """
         #!/bin/bash
         #
@@ -153,7 +159,7 @@ enum OSInstallerCache {
     }
 
     @discardableResult
-    static func open(_ cached: Cached) -> Bool {
+    public static func open(_ cached: Cached) -> Bool {
         NSWorkspace.shared.open(cached.url)
     }
 }

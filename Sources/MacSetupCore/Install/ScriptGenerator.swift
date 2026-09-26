@@ -1,26 +1,28 @@
 import Foundation
 
-struct ScriptOptions {
-    var verifySignatures = true
-    var strictVerify = false      // when true, a bad signature aborts that item
-    var skipInstalled = true
-    var installToUserApplications = false
-    var logPath = "/tmp/macsetup.log"
+public struct ScriptOptions {
+    public var verifySignatures = true
+    public var strictVerify = false      // when true, a bad signature aborts that item
+    public var skipInstalled = true
+    public var installToUserApplications = false
+    public var logPath = "/tmp/macsetup.log"
     /// Touch this file to pause the run between items; delete it to resume.
-    var pausePath = "/tmp/macsetup.pause"
+    public var pausePath = "/tmp/macsetup.pause"
     /// Seconds to leave the authorisation dialog up before giving up. Zero
     /// means wait indefinitely, which is right when someone is sitting there
     /// and wrong for a scheduled run.
-    var authTimeout = 0
+    public var authTimeout = 0
     /// Web apps as real standalone applications rather than browser launchers.
-    var standaloneWebApps = false
+    public var standaloneWebApps = false
+
+    public init() {}
 }
 
-enum ScriptGenerator {
+public enum ScriptGenerator {
 
     /// Builds a script that installs the given Apple updates, through the same
     /// elevated batch as everything else.
-    static func buildSystemUpdates(_ updates: [SystemUpdate],
+    public static func buildSystemUpdates(_ updates: [SystemUpdate],
                                    options: ScriptOptions = ScriptOptions()) -> String {
         // Last line of defence. `softwareupdate -i` on a macOS release
         // downloads the whole thing and only then reports "Failed to
@@ -56,7 +58,7 @@ enum ScriptGenerator {
     }
 
     /// Builds a script that removes the given targets.
-    static func buildUninstall(targets: [UninstallTarget],
+    public static func buildUninstall(targets: [UninstallTarget],
                                options: ScriptOptions = ScriptOptions()) -> String {
         var out = """
         #!/bin/bash
@@ -83,12 +85,12 @@ enum ScriptGenerator {
         return out
     }
 
-    static func buildUninstall(apps: [CatalogApp], options: ScriptOptions = ScriptOptions()) -> String {
+    public static func buildUninstall(apps: [CatalogApp], options: ScriptOptions = ScriptOptions()) -> String {
         buildUninstall(targets: apps.map(UninstallTarget.init), options: options)
     }
 
     /// Builds the complete, self-contained bash script for a run.
-    static func build(apps: [CatalogApp],
+    public static func build(apps: [CatalogApp],
                       tweaks: [DefaultTweak],
                       webApps: [WebApp] = [],
                       systemUpdates: [SystemUpdate] = [],
@@ -260,7 +262,7 @@ enum ScriptGenerator {
         return s
     }
 
-    static func attempt(_ src: AppSource, app: CatalogApp, team: String) -> String {
+    public static func attempt(_ src: AppSource, app: CatalogApp, team: String) -> String {
         let id = sh(app.id)
         switch src.kind {
         case .direct:
@@ -294,7 +296,7 @@ enum ScriptGenerator {
     }
 
     /// The embedded host binary, when this copy of MacSetup ships one.
-    static var webAppHostPath: String? {
+    public static var webAppHostPath: String? {
         if let res = Bundle.main.resourceURL?.appendingPathComponent("WebAppHost").path,
            FileManager.default.isExecutableFile(atPath: res) { return res }
         let beside = URL(fileURLWithPath: CommandLine.arguments[0])
@@ -362,7 +364,7 @@ enum ScriptGenerator {
 
     /// Jamf runs as root, so /Applications is writable and no elevation dance
     /// is needed; the console user is still used for anything user-scoped.
-    static func configForJamf(options: ScriptOptions) -> String {
+    public static func configForJamf(options: ScriptOptions) -> String {
         """
         REAL_USER=$(/usr/bin/stat -f%Su /dev/console)
         USER_HOME=$(/usr/bin/dscl . -read "/Users/$REAL_USER" NFSHomeDirectory 2>/dev/null | awk '{print $2}')
@@ -390,7 +392,7 @@ enum ScriptGenerator {
 
     /// Under Jamf we are already root, so packages install inline — there is no
     /// authorisation prompt to batch behind.
-    static func jamfJob(for app: CatalogApp) -> String {
+    public static func jamfJob(for app: CatalogApp) -> String {
         let id = sh(app.id), name = sh(app.name), bundle = sh(app.bundleId ?? "")
         var s = "msu_begin \(id)\n"
         s += "\(attempt(app.source, app: app, team: sh(app.teamId ?? ""))); MSU_RC=$?\n"
@@ -412,7 +414,7 @@ enum ScriptGenerator {
     // MARK: - Quoting
 
     /// Single-quote for bash, escaping embedded single quotes.
-    static func sh(_ value: String) -> String {
+    public static func sh(_ value: String) -> String {
         "'" + value.replacingOccurrences(of: "'", with: "'\\''") + "'"
     }
 }

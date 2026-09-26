@@ -5,15 +5,15 @@ import Foundation
 /// Mac version strings are a zoo — `0.98`, `16.112.26081720`, `4.51.191`,
 /// `2024.3-beta`, `v1.2.3`. Claiming an update that is not really newer is worse
 /// than saying nothing, so anything ambiguous comes back as `.incomparable`.
-enum VersionOrder {
+public enum VersionOrder {
     case older, same, newer, incomparable
 }
 
-enum VersionCompare {
+public enum VersionCompare {
 
     /// Pulls a comparable version out of a filename or tag.
     /// `Rectangle0.98.dmg` -> `0.98`, `v1.4.9` -> `1.4.9`.
-    static func extract(from text: String) -> String? {
+    public static func extract(from text: String) -> String? {
         let pattern = #"(\d+(?:\.\d+){1,4})"#
         guard let re = try? NSRegularExpression(pattern: pattern) else { return nil }
         let range = NSRange(text.startIndex..., in: text)
@@ -31,7 +31,7 @@ enum VersionCompare {
     /// Every run of digits, in order. `7.1.5 (84650)` and `7.1.5.84650` both
     /// become [7,1,5,84650] — the same release written two different ways, which
     /// a dotted-only parse would report as an upgrade.
-    static func normalise(_ raw: String) -> [Int]? {
+    public static func normalise(_ raw: String) -> [Int]? {
         var out: [Int] = []
         var digits = ""
         for ch in raw {
@@ -46,7 +46,7 @@ enum VersionCompare {
         return out.isEmpty ? nil : out
     }
 
-    static func compare(installed: String, latest: String) -> VersionOrder {
+    public static func compare(installed: String, latest: String) -> VersionOrder {
         guard let a = normalise(installed), let b = normalise(latest) else { return .incomparable }
 
         // Wildly different shapes are usually different versioning schemes

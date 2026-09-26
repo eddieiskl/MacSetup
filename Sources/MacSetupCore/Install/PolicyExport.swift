@@ -15,12 +15,12 @@ import Foundation
 /// * **Nudge**, the macadmins tool, for Macs with no MDM. It only prompts, but
 ///   it prompts far better than anything written here, and it is maintained by
 ///   people who do this full time.
-enum PolicyExport {
+public enum PolicyExport {
 
     /// A DDM declaration. `TargetLocalDateTime` is deliberately local time,
     /// not UTC: the deadline should land at a sensible hour for the person
     /// sitting at the Mac.
-    static func ddmDeclaration(version: String,
+    public static func ddmDeclaration(version: String,
                                deadline: Date,
                                identifier: String = UUID().uuidString) -> String {
         let f = DateFormatter()
@@ -44,7 +44,7 @@ enum PolicyExport {
     /// Deferrals are generous rather than punitive, and the deadline is a real
     /// date rather than "days since we noticed" — Nudge takes release dates
     /// from Apple, which is the bug in MacSetup's own reminder.
-    static func nudgeConfiguration(version: String,
+    public static func nudgeConfiguration(version: String,
                                    deadline: Date,
                                    aboutURL: String = "https://support.apple.com/en-us/100100") -> String {
         let f = DateFormatter()

@@ -1,4 +1,5 @@
 import SwiftUI
+import MacSetupCore
 
 struct QueueSheet: View {
     @EnvironmentObject var engine: InstallEngine

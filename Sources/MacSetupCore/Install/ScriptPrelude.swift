@@ -11,8 +11,8 @@ import Foundation
 ///    authorisation dialog for the whole run rather than one per package.
 ///  * Progress is reported on stdout as `@@MS|<id>|<state>|<detail>` lines which
 ///    the app parses. Any other output is kept as raw log text.
-enum ScriptPrelude {
-    static let body: String = #"""
+public enum ScriptPrelude {
+    public static let body: String = #"""
 # ---------------------------------------------------------------- status protocol
 msu_status() { printf '@@MS|%s|%s|%s\n' "$1" "$2" "${3:-}"; }
 msu_begin()  { msu_status "$1" running "Starting"; }

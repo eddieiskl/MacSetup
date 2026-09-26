@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import MacSetupCore
 
 /// The full-screen update screen, shown on every display.
 ///
