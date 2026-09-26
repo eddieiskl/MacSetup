@@ -35,10 +35,8 @@ The reusable logic — catalogue, profiles, installing, update checking, script
 generation, Desired State, Doctor — lives in a separate library target,
 **MacSetupCore** (`Sources/MacSetupCore`), with no SwiftUI dependency. The
 `MacSetup` executable (`Sources/MacSetup`) is the SwiftUI app plus the CLI's
-argument parsing in `Main.swift`, both built on top of it. **MacSetupMCP**
-(`Sources/MacSetupMCP`) is a third consumer — an MCP server exposing
-read-only tools over the same Core, with no UI and no duplicated logic (see
-below).
+argument parsing in `Main.swift`, both built on top of it. The **MCP server**
+(`mcp-server/`) is a third consumer, described below.
 
 See [docs/architecture-next.md](docs/architecture-next.md) for the module
 map, how a Desired State comparison and a remediation plan actually flow
@@ -46,32 +44,46 @@ through the system, and the trust boundaries the MCP server respects.
 
 ### MCP server
 
-`MacSetupMCP` is a stdio MCP server (via the [official Swift
-SDK](https://github.com/modelcontextprotocol/swift-sdk)) exposing four
+`mcp-server/server.py` is a small Python MCP server (the [official Python
+SDK](https://github.com/modelcontextprotocol/python-sdk)) exposing four
 read-only tools — nothing it exposes installs, updates, changes a setting, or
-removes anything:
+removes anything. It's a thin adapter, not a reimplementation: every tool
+just shells out to the `MacSetup` CLI's existing `--json` flags and returns
+that JSON. **MacSetupCore stays the only place any of this logic lives** —
+Python holds none of it.
 
-- `get_doctor_report` — run Doctor's health checks.
+- `get_doctor_report` — run Doctor's health checks (`MacSetup --doctor --json`).
 - `compare_desired_state` — compare a named profile or Role Template against
-  this Mac.
-- `get_role_templates` / `get_profiles` — discover valid names for the above.
+  this Mac (`MacSetup --compare-profile <name> --json`).
+- `get_role_templates` / `get_profiles` — discover valid names for the above
+  (`MacSetup --list-role-templates --json` / `--list-profiles --json`).
 
-Build and point an MCP client (Claude Desktop, Claude Code, etc.) at the
-binary:
+It's Python rather than Swift because the official Swift MCP SDK had a
+reproducible bug delivering `get_doctor_report`'s response (see
+docs/architecture-next.md for the full trace); the Python SDK is this
+project's reference implementation and doesn't have it. Requires
+[uv](https://docs.astral.sh/uv/); no separate install step — `uv run`
+reads the dependency straight out of the script:
 
 ```bash
-swift build -c release --product MacSetupMCP
+./Scripts/build-app.sh --debug   # or a release build; server.py finds either
 ```
 
 ```json
 {
   "mcpServers": {
     "macsetup": {
-      "command": "/path/to/MacSetup/.build/release/MacSetupMCP"
+      "command": "uv",
+      "args": ["run", "/path/to/MacSetup/mcp-server/server.py"]
     }
   }
 }
 ```
+
+The server locates the `MacSetup` binary itself (built `.app`, a `swift
+build` output, or `$MACSETUP_BIN`) — **rebuild after pulling changes**; an
+out-of-date binary that doesn't recognize a flag falls through to launching
+the full GUI app instead of exiting, which looks exactly like a hang.
 
 Mutating tools (`create_remediation_plan` and anything that actually installs
 or removes) are a deliberate follow-up, not implemented yet — see
@@ -380,6 +392,8 @@ MacSetup.app/Contents/MacOS/MacSetup --compare-profile "Dev"
 MacSetup.app/Contents/MacOS/MacSetup --compare-profile "Dev" --json
 MacSetup.app/Contents/MacOS/MacSetup --doctor
 MacSetup.app/Contents/MacOS/MacSetup --doctor --json
+MacSetup.app/Contents/MacOS/MacSetup --list-role-templates --json
+MacSetup.app/Contents/MacOS/MacSetup --list-profiles --json
 ```
 
 `--compare-profile` matches a saved profile by name first, then a bundled

@@ -1733,6 +1733,44 @@ enum Entry {
             exit(0)
         }
 
+        if args.contains("--list-role-templates") {
+            let json = args.contains("--json")
+            runCLI { cat in
+                let templates = cat.roleTemplateList
+                if json {
+                    printJSON(templates)
+                } else {
+                    for t in templates {
+                        print("\(t.id.padding(toLength: 20, withPad: " ", startingAt: 0))  "
+                              + "\(t.group.padding(toLength: 12, withPad: " ", startingAt: 0))  "
+                              + "\(t.name) — \(t.summary)")
+                    }
+                }
+            }
+            exit(0)
+        }
+
+        if args.contains("--list-profiles") {
+            let json = args.contains("--json")
+            final class Flag { var done = false }
+            let flag = Flag()
+            Task { @MainActor in
+                let profiles = ProfileStore().profiles
+                if json {
+                    printJSON(profiles)
+                } else if profiles.isEmpty {
+                    print("No saved profiles.")
+                } else {
+                    for p in profiles { print(p.name) }
+                }
+                flag.done = true
+            }
+            while !flag.done {
+                _ = RunLoop.main.run(mode: .default, before: Date().addingTimeInterval(0.05))
+            }
+            exit(0)
+        }
+
         MacSetupApp.main()
     }
 
@@ -1826,6 +1864,10 @@ enum Entry {
                                             Compare a saved profile or bundled Role
                                             Template against this Mac (Desired State)
           MacSetup --doctor [--json]        Run MacSetup Doctor's read-only health checks
+          MacSetup --list-role-templates [--json]
+                                            List bundled Role Templates (name, group, summary)
+          MacSetup --list-profiles [--json]
+                                            List saved profile names
 
         Example:
           MacSetup --emit-script google-chrome,slack,rectangle > setup.sh

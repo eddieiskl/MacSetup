@@ -1169,7 +1169,7 @@ else
 fi
 
 # A real, end-to-end CLI run against a bundled Role Template, both as text
-# and as JSON an automation pipeline (or a future MCP server) could consume.
+# and as JSON an automation pipeline (or the Python MCP server) could consume.
 FIRSTTEMPLATE=$(python3 -c "
 import json; c=json.load(open('$CATALOG'))
 t = c.get('roleTemplates', [])
@@ -1183,6 +1183,20 @@ if [ -n "$FIRSTTEMPLATE" ]; then
   fi
 else
   skip "no bundled Role Template to compare against"
+fi
+
+if $BIN --list-role-templates --json > /tmp/st-lrt.json 2>/tmp/st-lrt.err \
+   && python3 -m json.tool /tmp/st-lrt.json >/dev/null 2>&1; then
+  ok "--list-role-templates --json emits valid JSON"
+else
+  bad "--list-role-templates --json emits valid JSON" "$(tail -3 /tmp/st-lrt.err)"
+fi
+
+if $BIN --list-profiles --json > /tmp/st-lp.json 2>/tmp/st-lp.err \
+   && python3 -m json.tool /tmp/st-lp.json >/dev/null 2>&1; then
+  ok "--list-profiles --json emits valid JSON"
+else
+  bad "--list-profiles --json emits valid JSON" "$(tail -3 /tmp/st-lp.err)"
 fi
 
 if $BIN --doctor --json > /tmp/st-doc.json 2>/tmp/st-doc.err \

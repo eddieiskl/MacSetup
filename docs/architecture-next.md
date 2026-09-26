@@ -173,35 +173,75 @@ Doctor don't loosen anything:
 
 ## The MCP server
 
-Built, as the first slice: `Sources/MacSetupMCP` is a stdio MCP server using
-the [official Swift SDK](https://github.com/modelcontextprotocol/swift-sdk)
-(`.package(url: "https://github.com/modelcontextprotocol/swift-sdk.git",
-from: "0.12.1")` — depended on rather than hand-rolled, so the JSON-RPC/stdio
-framing is exactly what real MCP clients expect). It depends only on
-`MacSetupCore`; it does not link `MacSetup` or SwiftUI at all, which is the
-entire point of the module split above.
+`mcp-server/server.py` — a Python MCP server, not Swift. It's a thin adapter,
+not a reimplementation: every tool shells out to the `MacSetup` CLI's
+existing `--json` flags and returns that JSON verbatim (wrapped where the
+flag returns a bare array, since a top-level object is the safer shape for a
+tool result). **MacSetupCore remains the only place any of this logic
+lives** — the Python file holds zero business logic, just argument-building,
+subprocess invocation, and error passthrough.
 
-Deliberately scoped to **read-only tools first** — proving out the boundary
-(a plan for a person to inspect, never an action an LLM can trigger directly)
-before extending it to anything that mutates the Mac:
-
-| MCP tool | Backed by (MacSetupCore) | Status |
+| MCP tool | Backed by (CLI flag → MacSetupCore) | Status |
 | --- | --- | --- |
-| `get_doctor_report` | `DoctorEngine.run(catalogApps:)` | ✅ implemented |
-| `compare_desired_state` | `DesiredStateService.compare(name:profiles:catalog:)` | ✅ implemented |
-| `get_role_templates` | `Catalog.roleTemplateList` | ✅ implemented (discovery helper for the above) |
-| `get_profiles` | `ProfileStore` | ✅ implemented (discovery helper for the above) |
-| `get_system_info` | `MachineSummary.current()` | not yet — trivial, small follow-up |
-| `get_installed_apps` | `MachineInventory.scan(catalogApps:)` | not yet — trivial, small follow-up |
-| `search_catalog` | `Catalog.apps` filtered the way `AppState`'s own filter already does (not yet lifted into Core as a standalone helper) | not yet |
-| `get_updates` | `UpdateChecker.check(apps:)` | not yet |
-| `create_remediation_plan` | `RemediationPlanner.plan(from:includeRemovals:)` | **deliberately not yet** — see below |
+| `get_doctor_report` | `--doctor --json` → `DoctorEngine.run(catalogApps:)` | ✅ implemented |
+| `compare_desired_state` | `--compare-profile <name> --json` → `DesiredStateService.compare(name:profiles:catalog:)` | ✅ implemented |
+| `get_role_templates` | `--list-role-templates --json` → `Catalog.roleTemplateList` | ✅ implemented (discovery helper) |
+| `get_profiles` | `--list-profiles --json` → `ProfileStore` | ✅ implemented (discovery helper) |
+| `get_system_info` | — → `MachineSummary.current()` | not yet — trivial, small follow-up |
+| `get_installed_apps` | — → `MachineInventory.scan(catalogApps:)` | not yet — trivial, small follow-up |
+| `search_catalog` | — → `Catalog.apps` filtered the way `AppState`'s own filter already does (not yet lifted into Core as a standalone helper) | not yet |
+| `get_updates` | — → `UpdateChecker.check(apps:)` | not yet |
+| `create_remediation_plan` | — → `RemediationPlanner.plan(from:includeRemovals:)` | **deliberately not yet** — see below |
 
-`DesiredStateService` (new: `Sources/MacSetupCore/DesiredState/DesiredStateService.swift`)
+`DesiredStateService` (`Sources/MacSetupCore/DesiredState/DesiredStateService.swift`)
 is the one place that resolves a name to a profile/template and gathers the
-comparator's inputs — the CLI's `--compare-profile`, the app's
-`DesiredStateEngine`, and the MCP server's `compare_desired_state` tool all
-call it, none of them duplicate it.
+comparator's inputs — the CLI's `--compare-profile` and the app's
+`DesiredStateEngine` both call it, neither duplicates it. (The MCP server
+doesn't call it directly; it calls the CLI, which calls it — one more hop,
+same single source of truth.)
+
+### Why Python, not Swift
+
+The first attempt was a genuine Swift MCP server (`Sources/MacSetupMCP`,
+since removed), using the official Swift SDK
+(`modelcontextprotocol/swift-sdk`) directly against `MacSetupCore` — no
+subprocess, no CLI in between. It worked for three of the four tools. For
+the fourth, `get_doctor_report`, it reproducibly hung: a real MCP client
+(Claude Code) reported "running tools…" for 9+ minutes with no response.
+
+Diagnosis (stderr tracing added at each step, then removed): `DoctorEngine.run()`
+itself finished in under 10 seconds every time — confirmed by tracing
+inside the function. The handler function returned cleanly to the SDK, also
+confirmed by tracing at that exact boundary. After that point, with the
+process otherwise fully idle (no CPU activity, no open network connections,
+no child processes), the JSON-RPC response simply never left the process —
+sometimes for 90+ seconds, observed directly via a raw stdio harness talking
+to the server the same way a real client does. The other three tools, whose
+handlers return smaller payloads, responded instantly every time. That
+points squarely at the Swift SDK's own response-serialization/delivery path
+for this specific payload shape, not at anything in MacSetupCore, the
+handler code, or the protocol framing — all three were traced and shown
+correct.
+
+Rather than debug a third-party SDK's internals further, the pragmatic move
+was to swap the *adapter* layer only: the Python SDK is this project's
+reference implementation, is more battle-tested, and — critically — doesn't
+duplicate any MacSetup logic even in Python, since it just calls the same
+CLI a person would. Confirmed on the actual failure case: the same
+`get_doctor_report` call that hung indefinitely in Swift now returns in
+about 12 seconds through Python, every time, including under a real MCP
+client.
+
+One real bug surfaced during this swap, worth recording because it looks
+identical to a hang if you don't know it: the server resolves the `MacSetup`
+binary itself (`_find_macsetup_binary()` in `server.py`), preferring a built
+`.app` bundle. Early testing pointed it at an `.app` built *before* the two
+new `--list-role-templates`/`--list-profiles` CLI flags existed — that
+binary didn't recognize the flag, fell through to launching the full
+SwiftUI app, and the launched GUI process (naturally) never exits. Rebuilding
+the `.app` fixed it instantly. **Whoever runs this server needs an
+up-to-date `MacSetup` binary** — an `MACSETUP_BIN` override or a fresh build
+after pulling changes, same as any dev-loop dependency.
 
 `create_remediation_plan` and anything that would actually call
 `InstallEngine` are the next step, not this one — deliberately, so the
@@ -211,10 +251,9 @@ lands: a plan is data an operator (human or client-side logic) inspects, not
 something the tool executes; turning an approved plan into a run still goes
 through `InstallEngine`'s existing single-batched-prompt authorization,
 unchanged; and there is still no generic shell-execution tool, and none is
-planned. Every type these tools return is already `Codable`/JSON-serializable
-(see `--compare-profile --json` and `--doctor --json`, which exercise the
-same `DesiredStateReport`/`DoctorReport` the MCP tools return) and none of
-them touch a UI type.
+planned. Every type these tools return is already JSON (see `--compare-profile
+--json` and `--doctor --json`, the exact JSON the Python server returns) and
+none of it touches a UI type.
 
 ## What's intentionally still manual
 
