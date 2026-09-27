@@ -116,11 +116,8 @@ public enum ScriptGenerator {
         // Packages first: they are the only items that need a password, so the
         // authorisation dialog appears near the start of the run rather than
         // after every other download has completed.
-        let needsAuth: (CatalogApp) -> Bool = {
-            $0.source.needsRoot || $0.isBrewPackage || $0.needsTerminal
-        }
-        let packaged = apps.filter(needsAuth)
-        let rest = apps.filter { !needsAuth($0) }
+        let packaged = apps.filter(\.needsElevatedBatch)
+        let rest = apps.filter { !$0.needsElevatedBatch }
 
         // Apple updates need the same authorisation, so they join the same batch
         // and the user is asked once for the whole run.

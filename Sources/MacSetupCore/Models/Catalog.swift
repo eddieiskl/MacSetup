@@ -172,6 +172,13 @@ public struct CatalogApp: Codable, Identifiable, Hashable {
         source.kind == .brew && (needsAdmin ?? false) && !(caskInstaller ?? false)
             && source.cask != nil
     }
+
+    /// True for anything that would have to go through the script's single
+    /// elevated batch (an admin-privileges prompt) or a real terminal to
+    /// install unattended. The canonical definition — every caller that needs
+    /// to decide "can this run with no one there to click a password dialog"
+    /// checks this, rather than re-deriving the same three conditions.
+    public var needsElevatedBatch: Bool { needsRoot || isBrewPackage || needsTerminal }
 }
 
 public struct DefaultTweak: Codable, Identifiable, Hashable {

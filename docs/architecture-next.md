@@ -183,15 +183,16 @@ subprocess invocation, and error passthrough.
 
 | MCP tool | Backed by (CLI flag → MacSetupCore) | Status |
 | --- | --- | --- |
-| `get_doctor_report` | `--doctor --json` → `DoctorEngine.run(catalogApps:)` | ✅ implemented |
-| `compare_desired_state` | `--compare-profile <name> --json` → `DesiredStateService.compare(name:profiles:catalog:)` | ✅ implemented |
+| `get_doctor_report` | `--doctor --json` → `DoctorEngine.run(catalogApps:)` | ✅ implemented, read-only |
+| `compare_desired_state` | `--compare-profile <name> --json` → `DesiredStateService.compare(name:profiles:catalog:)` | ✅ implemented, read-only |
 | `get_role_templates` | `--list-role-templates --json` → `Catalog.roleTemplateList` | ✅ implemented (discovery helper) |
 | `get_profiles` | `--list-profiles --json` → `ProfileStore` | ✅ implemented (discovery helper) |
+| `create_remediation_plan` | `--remediation-plan <name> [--include-removals] --json` → `RemediationPlanner.plan(from:includeRemovals:)` | ✅ implemented, read-only (proposal only) |
+| `apply_remediation` | `--apply-remediation <name> --actions <ids> [--confirm-removals] --json` → `RemediationSelector.select` + `InstallEngine.run`/`.runUninstall` | ✅ implemented, **mutating** — see below |
 | `get_system_info` | — → `MachineSummary.current()` | not yet — trivial, small follow-up |
 | `get_installed_apps` | — → `MachineInventory.scan(catalogApps:)` | not yet — trivial, small follow-up |
 | `search_catalog` | — → `Catalog.apps` filtered the way `AppState`'s own filter already does (not yet lifted into Core as a standalone helper) | not yet |
 | `get_updates` | — → `UpdateChecker.check(apps:)` | not yet |
-| `create_remediation_plan` | — → `RemediationPlanner.plan(from:includeRemovals:)` | **deliberately not yet** — see below |
 
 `DesiredStateService` (`Sources/MacSetupCore/DesiredState/DesiredStateService.swift`)
 is the one place that resolves a name to a profile/template and gathers the
@@ -243,17 +244,67 @@ the `.app` fixed it instantly. **Whoever runs this server needs an
 up-to-date `MacSetup` binary** — an `MACSETUP_BIN` override or a fresh build
 after pulling changes, same as any dev-loop dependency.
 
-`create_remediation_plan` and anything that would actually call
-`InstallEngine` are the next step, not this one — deliberately, so the
-read/write boundary gets proven out with real read tools before anything
-that could change the Mac is reachable from an MCP client at all. When that
-lands: a plan is data an operator (human or client-side logic) inspects, not
-something the tool executes; turning an approved plan into a run still goes
-through `InstallEngine`'s existing single-batched-prompt authorization,
-unchanged; and there is still no generic shell-execution tool, and none is
-planned. Every type these tools return is already JSON (see `--compare-profile
---json` and `--doctor --json`, the exact JSON the Python server returns) and
-none of it touches a UI type.
+### `create_remediation_plan` and `apply_remediation`
+
+These landed once the read-only boundary above had been proven out with a
+real MCP client. `create_remediation_plan` is `RemediationPlanner.plan`
+unchanged — pure, no execution, same as before. `apply_remediation` is the
+first tool in the project that can make a real, unattended change to the
+Mac, so it got a full design pass (not just an implementation) before being
+built. The trust boundary:
+
+- **Explicit selection, not a plan blob.** The MCP tool takes `action_ids`,
+  not a whole plan — only the ids named are ever touched. The plan itself is
+  always freshly re-derived server-side from the Mac's current state at
+  apply time (action ids are deterministic strings like `"install-slack"`,
+  not random, so this needs no server-side session/token); an id that's
+  stale because the Mac's state changed is reported back as skipped.
+- **Privilege is filtered out, never attempted.** `CatalogApp.needsElevatedBatch`
+  (`needsRoot || isBrewPackage || needsTerminal`) is checked *before*
+  anything reaches `InstallEngine`. This matters because the only escalation
+  mechanism in this codebase is `osascript ... with administrator
+  privileges` (`ScriptPrelude.swift`), which needs a real logged-in GUI
+  session — and the MCP server usually *is* running inside one (Claude
+  Desktop). Relying on "it'll fail safely with no window server" would have
+  been wrong on this exact setup; a privileged app handed to `InstallEngine`
+  unfiltered would pop a real, unattended admin-password dialog. So
+  filtering happens up front, unconditionally, with no `--allow-prompt`
+  equivalent ever exposed via MCP.
+- **Removals need two confirmations.** The plan must have been computed with
+  removals visible (`include_removals`/`--include-removals`), *and*
+  `confirm_removals`/`--confirm-removals` must be passed again at apply
+  time. Uninstalls themselves never need root (a `.pkg`-installed app is
+  refused outright — "remove it with the vendor's own uninstaller" — and
+  everything else is a plain move to `~/.Trash`), so the extra confirmation
+  is purely about not deleting things a caller didn't clearly ask for, not
+  about privilege.
+- **The selection/filtering logic is pure and separately tested.**
+  `RemediationSelector` (`Sources/MacSetupCore/DesiredState/RemediationSelector.swift`)
+  does all of the above with no `Process`, no I/O — `--test-remediation-apply`
+  exercises it directly (stale ids, unconfirmed removals, a synthetic
+  `.pkg`-sourced app) without ever running a real install. Actually applying
+  something for real is verified manually against this Mac instead, the same
+  way real installs are skipped under `--offline` elsewhere in the suite.
+- **Still no generic shell-execution tool, and none is planned.** Every
+  action maps to one of `InstallEngine`'s existing, already-reviewed entry
+  points (`run`/`runUninstall`) — nothing here can execute arbitrary
+  commands.
+
+**A real bug this surfaced, unrelated to the MCP work itself but found while
+testing it:** `msu_make_webapp` (`ScriptPrelude.swift`) used to `rm -rf` the
+target path unconditionally before creating a web app bundle. A catalogue web
+app's display name can coincidentally match a real, unrelated installed
+application — `/Applications/GitHub.app` on this machine, for the "GitHub"
+web app — and the unconditional `rm -rf` destroyed it, permanently (no Trash
+move, and this Mac had no Time Machine backup). This was pre-existing,
+already-shipped behavior; the same destructive path exists in the GUI's own
+"Apply" button whenever a name collides, it just hadn't been hit yet. Fixed
+by refusing to touch anything at that path whose `CFBundleIdentifier` isn't
+already `local.macsetup.webapp.<id>` — verified against three cases
+(collision refused, fresh create still works, updating MacSetup's own
+previous bundle still works). Worth remembering: **any code that deletes
+something by a user-controlled or catalogue-controlled name, rather than by
+an id it created itself, needs to check what's actually there first.**
 
 ## What's intentionally still manual
 

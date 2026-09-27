@@ -22,10 +22,18 @@ entirely inside the SDK's response-delivery path. The Python SDK is the
 project's reference implementation and doesn't exhibit this. See
 docs/architecture-next.md for the full writeup.
 
-Tools are deliberately read-only, matching the same boundary the Swift
-attempt used: nothing here installs, updates, changes a setting, or removes
-anything. `create_remediation_plan` and anything that would actually call
-InstallEngine remain a deliberate follow-up.
+Four tools (get_doctor_report, compare_desired_state, get_role_templates,
+get_profiles) are read-only. Two more (create_remediation_plan,
+apply_remediation) followed once that boundary was proven: the first only
+describes intent (no execution, ever); the second actually calls
+InstallEngine, through the same --apply-remediation CLI flag a person could
+type themselves. apply_remediation has hard safety rails baked into the CLI
+flag it shells out to, not just this adapter: it never attempts anything
+needing an administrator password (those are always reported back as
+skipped, never attempted — no `--allow-prompt` equivalent is exposed here,
+ever), and removing an extra app needs both the plan to have included
+removals and a separate confirm_removals=True at apply time. See
+docs/architecture-next.md for the full trust-boundary writeup.
 """
 
 import json
@@ -165,6 +173,69 @@ def get_profiles() -> dict:
     """List the user's saved MacSetup profiles. Use this to find a valid
     name for compare_desired_state."""
     return {"profiles": _run_macsetup_json(["--list-profiles"])}
+
+
+@mcp.tool()
+def create_remediation_plan(name: str, include_removals: bool = False) -> dict:
+    """Propose fixes for whatever compare_desired_state found out of
+    compliance for a saved profile or bundled Role Template: one action per
+    gap (install a missing app, update an outdated one, apply a mismatched
+    tweak, create a missing web app). This only describes intent — nothing
+    is changed on the Mac by calling this. Pass an action's "id" to
+    apply_remediation to actually run it.
+
+    Removals are omitted unless include_removals=True, and even then are
+    only ever proposed, never applied automatically — apply_remediation
+    additionally requires confirm_removals=True before it will act on one.
+
+    Args:
+        name: Name of a saved MacSetup profile or a bundled Role Template.
+        include_removals: Also propose removing extra apps present but not
+            requested by this profile/template (still proposal-only).
+    """
+    args = ["--remediation-plan", name]
+    if include_removals:
+        args.append("--include-removals")
+    return _run_macsetup_json(args)
+
+
+@mcp.tool()
+def apply_remediation(name: str, action_ids: list[str], confirm_removals: bool = False) -> dict:
+    """Apply specific actions from a remediation plan — this makes real
+    changes on the Mac: it can install apps, update apps, apply system
+    tweaks, create web apps, and (only with confirm_removals=True, and only
+    for actions the plan already flagged as removals) move an extra app to
+    the Trash.
+
+    action_ids must come from a prior create_remediation_plan or
+    compare_desired_state call for the SAME name — an id from a different
+    profile/template, or one that's stale because the Mac's state changed,
+    is reported back as skipped rather than applied. Only the exact ids
+    listed are touched; nothing else in the plan is applied.
+
+    Anything that would need an administrator password (a .pkg installer, a
+    Homebrew package needing sudo, anything needing a real terminal) is
+    always skipped, never attempted — there is no way to make this tool
+    raise a password dialog. Skipped items are reported back so the person
+    can finish them manually in the MacSetup app.
+
+    Removing an app needs two separate confirmations: the plan must have
+    been created with include_removals=True, AND confirm_removals=True must
+    be passed here too. Without both, any removeApp action in action_ids is
+    reported as skipped rather than applied.
+
+    Args:
+        name: Name of a saved MacSetup profile or a bundled Role Template
+            (must match the one create_remediation_plan was called with).
+        action_ids: The exact plan action ids to apply (e.g.
+            ["install-slack", "tweak-finder-show-extensions"]).
+        confirm_removals: Required, in addition to the plan having included
+            removals, before any removeApp action is actually applied.
+    """
+    args = ["--apply-remediation", name, "--actions", ",".join(action_ids)]
+    if confirm_removals:
+        args.append("--confirm-removals")
+    return _run_macsetup_json(args)
 
 
 if __name__ == "__main__":

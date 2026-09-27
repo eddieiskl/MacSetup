@@ -1161,10 +1161,24 @@ else
   bad "doctor checks" "$(grep FAIL /tmp/st-doctor.txt | head -3)"
 fi
 
+# RemediationSelector — the gate every --apply-remediation/apply_remediation
+# action id passes through before InstallEngine ever sees it (stale ids,
+# unconfirmed removals, anything needing an administrator password). Pure
+# and synthetic, same as the checks above — actually applying a remediation
+# for real (installing something, creating a web app) is deliberately NOT
+# exercised here, the same way real installs are skipped under --offline;
+# that's verified manually against this Mac instead.
+if $BIN --test-remediation-apply > /tmp/st-rem-apply.txt 2>&1; then
+  ok "remediation apply-selection safety rails ($(grep -c '^  ok' /tmp/st-rem-apply.txt) cases)"
+else
+  bad "remediation apply-selection safety rails" "$(grep FAIL /tmp/st-rem-apply.txt | head -3)"
+fi
+
 # The harness itself must be able to detect a failure, the same sanity check
 # section 4 already runs for --test-unlock/--test-nudge/--test-nag.
 if ! $BIN --test-desired-state --force-fail >/dev/null 2>&1 \
    && ! $BIN --test-remediation --force-fail >/dev/null 2>&1 \
+   && ! $BIN --test-remediation-apply --force-fail >/dev/null 2>&1 \
    && ! $BIN --test-compat --force-fail >/dev/null 2>&1 \
    && ! $BIN --test-doctor --force-fail >/dev/null 2>&1; then
   ok "the desired-state/doctor harnesses report failures when they occur"
@@ -1184,6 +1198,14 @@ if [ -n "$FIRSTTEMPLATE" ]; then
     ok "--compare-profile --json emits valid JSON for a real Role Template"
   else
     bad "--compare-profile --json emits valid JSON" "$(tail -3 /tmp/st-cp.err)"
+  fi
+  # Proposal-only — --remediation-plan never executes anything, so this is
+  # as safe to run for real as --compare-profile above.
+  if $BIN --remediation-plan "$FIRSTTEMPLATE" --include-removals --json > /tmp/st-rp.json 2>/tmp/st-rp.err \
+     && python3 -m json.tool /tmp/st-rp.json >/dev/null 2>&1; then
+    ok "--remediation-plan --json emits valid JSON for a real Role Template"
+  else
+    bad "--remediation-plan --json emits valid JSON" "$(tail -3 /tmp/st-rp.err)"
   fi
 else
   skip "no bundled Role Template to compare against"

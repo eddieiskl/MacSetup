@@ -45,18 +45,24 @@ through the system, and the trust boundaries the MCP server respects.
 ### MCP server
 
 `mcp-server/server.py` is a small Python MCP server (the [official Python
-SDK](https://github.com/modelcontextprotocol/python-sdk)) exposing four
-read-only tools — nothing it exposes installs, updates, changes a setting, or
-removes anything. It's a thin adapter, not a reimplementation: every tool
-just shells out to the `MacSetup` CLI's existing `--json` flags and returns
-that JSON. **MacSetupCore stays the only place any of this logic lives** —
-Python holds none of it.
+SDK](https://github.com/modelcontextprotocol/python-sdk)) exposing six
+tools — four read-only, two that can make real changes on this Mac (see
+below). It's a thin adapter, not a reimplementation: every tool just shells
+out to the `MacSetup` CLI's existing `--json` flags and returns that JSON.
+**MacSetupCore stays the only place any of this logic lives** — Python holds
+none of it.
 
 - `get_doctor_report` — run Doctor's health checks (`MacSetup --doctor --json`).
 - `compare_desired_state` — compare a named profile or Role Template against
   this Mac (`MacSetup --compare-profile <name> --json`).
 - `get_role_templates` / `get_profiles` — discover valid names for the above
   (`MacSetup --list-role-templates --json` / `--list-profiles --json`).
+- `create_remediation_plan` — propose fixes for whatever `compare_desired_state`
+  found out of compliance (`MacSetup --remediation-plan <name> [--include-removals] --json`).
+  Read-only: this only describes intent, it never changes anything.
+- `apply_remediation` — actually apply specific actions by id from a plan
+  (`MacSetup --apply-remediation <name> --actions <ids> [--confirm-removals] --json`).
+  **This one makes real changes** — see the safety rails below.
 
 It's Python rather than Swift because the official Swift MCP SDK had a
 reproducible bug delivering `get_doctor_report`'s response (see
@@ -85,9 +91,23 @@ build` output, or `$MACSETUP_BIN`) — **rebuild after pulling changes**; an
 out-of-date binary that doesn't recognize a flag falls through to launching
 the full GUI app instead of exiting, which looks exactly like a hang.
 
-Mutating tools (`create_remediation_plan` and anything that actually installs
-or removes) are a deliberate follow-up, not implemented yet — see
-docs/architecture-next.md for why and what changes when they land.
+`apply_remediation`'s safety rails (enforced in the CLI flag it shells out
+to, not just in Python, so they hold no matter what calls it):
+
+- Only the exact action ids passed are touched — no "apply everything" mode.
+- Anything needing an administrator password (a `.pkg` installer, a Homebrew
+  package needing `sudo`, anything needing a real terminal) is always
+  skipped, never attempted. There is no `--allow-prompt` equivalent exposed
+  here, ever — this can never raise a surprise password dialog.
+- Removing an app needs two separate confirmations: the plan must have been
+  created with `include_removals`/`--include-removals`, **and**
+  `confirm_removals`/`--confirm-removals` must be passed again at apply time.
+- The plan is always freshly re-derived from the Mac's current state before
+  applying — a stale action id (the Mac's state changed since it was seen)
+  is reported back as skipped rather than acted on.
+
+See docs/architecture-next.md for the full trust-boundary writeup and why
+this was built as a separate follow-up once the read-only tools were proven.
 
 ## Build
 
@@ -394,6 +414,8 @@ MacSetup.app/Contents/MacOS/MacSetup --doctor
 MacSetup.app/Contents/MacOS/MacSetup --doctor --json
 MacSetup.app/Contents/MacOS/MacSetup --list-role-templates --json
 MacSetup.app/Contents/MacOS/MacSetup --list-profiles --json
+MacSetup.app/Contents/MacOS/MacSetup --remediation-plan "Dev" --json
+MacSetup.app/Contents/MacOS/MacSetup --apply-remediation "Dev" --actions install-slack,tweak-finder-show-extensions --json
 ```
 
 `--compare-profile` matches a saved profile by name first, then a bundled
@@ -416,6 +438,15 @@ and the JSON form is a `DesiredStateReport` — `apps`, `tweaks`, `webApps` and
 `results` array of `{identifier, category, title, details, severity}`.
 Both are stable, `sortedKeys`-encoded JSON, safe to pipe into `jq` or feed to
 another tool.
+
+`--remediation-plan` turns a report's gaps into one proposed action per
+finding (`{id, kind, targetID, title, detail, requiresExplicitApproval}`) —
+proposal only, nothing runs. `--apply-remediation <name> --actions
+id1,id2,...` actually runs the named ids through the same `InstallEngine`
+the app's own Apply button uses, reporting each one's outcome
+(`applied`/`failed`/`skipped-...`). See the MCP server section above for its
+full safety rails — they apply identically here, since the MCP tool is just
+this flag.
 
 ---
 

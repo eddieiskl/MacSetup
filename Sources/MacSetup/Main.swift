@@ -1237,6 +1237,106 @@ enum Entry {
             exit(failed == 0 ? 0 : 1)
         }
 
+        // Covers RemediationSelector — the pure gate every selected action id
+        // passes through before InstallEngine ever sees it. No real install
+        // happens here; this is exactly why that logic was pulled out into
+        // its own pure function rather than left inline in --apply-remediation.
+        if args.contains("--test-remediation-apply") {
+            var failed = args.contains("--force-fail") ? 1 : 0
+            func check(_ label: String, _ ok: Bool) {
+                if !ok { failed += 1 }
+                print("  \(ok ? "ok  " : "FAIL") \(label)")
+            }
+
+            let privilegedApp = CatalogApp(
+                id: "privileged-app", name: "Privileged App", category: "test", vendor: "Test",
+                summary: "", homepage: "", bundleId: "com.test.privileged", teamId: nil, tags: [],
+                license: "", icon: nil, selfUpdates: nil, needsAdmin: nil, caskInstaller: nil,
+                source: AppSource(kind: .direct, url: "https://example.com/x.pkg", format: "pkg"),
+                fallback: nil)
+            let normalApp = CatalogApp(
+                id: "normal-app", name: "Normal App", category: "test", vendor: "Test",
+                summary: "", homepage: "", bundleId: "com.test.normal", teamId: nil, tags: [],
+                license: "", icon: nil, selfUpdates: nil, needsAdmin: nil, caskInstaller: nil,
+                source: AppSource(kind: .direct, url: "https://example.com/x.dmg", format: "dmg"),
+                fallback: nil)
+            let tweak = DefaultTweak(id: "a-tweak", group: "test", name: "A Tweak", detail: "",
+                                     command: "defaults write com.test x -bool true",
+                                     revert: "defaults delete com.test x", restart: [], recommended: false)
+            let webApp = WebApp(id: "a-webapp", name: "A Web App", group: "test",
+                                url: "https://example.com", summary: "", icon: nil)
+            let catalog = Catalog(schemaVersion: 1, updated: "", categories: [],
+                                  apps: [privilegedApp, normalApp], systemDefaults: [tweak],
+                                  webApps: [webApp], roleTemplates: [])
+
+            check("needsElevatedBatch is true for a .pkg source", privilegedApp.needsElevatedBatch)
+            check("needsElevatedBatch is false for a plain .dmg source", !normalApp.needsElevatedBatch)
+
+            let source = DesiredStateSource(kind: .profile, name: "Selftest")
+            let report = DesiredStateReport(
+                machine: .current(), source: source,
+                apps: [
+                    AppFinding(id: "privileged-app", name: "Privileged App", status: .missing,
+                              installedVersion: nil, latestVersion: nil, detail: "Not installed."),
+                    AppFinding(id: "normal-app", name: "Normal App", status: .missing,
+                              installedVersion: nil, latestVersion: nil, detail: "Not installed."),
+                    AppFinding(id: "unknown-app", name: "Unknown App", status: .unknown,
+                              installedVersion: "1.0", latestVersion: nil, detail: "Cannot verify."),
+                ],
+                tweaks: [TweakFinding(id: "a-tweak", name: "A Tweak", status: .different, detail: "Mismatch.")],
+                webApps: [WebAppFinding(id: "a-webapp", name: "A Web App", status: .missing, detail: "Not installed.")],
+                extraApps: [ExtraAppFinding(name: "Extra App", bundleID: "com.test.extra",
+                                           path: "/Applications/Extra App.app", catalogID: nil,
+                                           detail: "Not requested.")],
+                warnings: [])
+            let plan = RemediationPlanner.plan(from: report, includeRemovals: true)
+            let removeID = plan.actions.first { $0.kind == .removeApp }!.id
+
+            let unknownID = RemediationSelector.select(
+                requestedIDs: ["not-a-real-id"], plan: plan, catalog: catalog,
+                report: report, confirmRemovals: false)
+            check("an unknown action id is skipped as stale",
+                  unknownID.outcomes["not-a-real-id"]?.outcome == "skipped-stale")
+            check("a stale id never reaches the pending set",
+                  !unknownID.pendingIDs.contains("not-a-real-id"))
+
+            let removalUnconfirmed = RemediationSelector.select(
+                requestedIDs: [removeID], plan: plan, catalog: catalog,
+                report: report, confirmRemovals: false)
+            check("a removal without --confirm-removals is skipped, not queued",
+                  removalUnconfirmed.outcomes[removeID]?.outcome == "skipped-removal-not-confirmed")
+            check("an unconfirmed removal never reaches InstallEngine's input",
+                  removalUnconfirmed.removals.isEmpty)
+
+            let removalConfirmed = RemediationSelector.select(
+                requestedIDs: [removeID], plan: plan, catalog: catalog,
+                report: report, confirmRemovals: true)
+            check("a removal with --confirm-removals is queued to run",
+                  removalConfirmed.removals.count == 1 && removalConfirmed.pendingIDs.contains(removeID))
+
+            let privilegedSelection = RemediationSelector.select(
+                requestedIDs: ["install-privileged-app", "install-normal-app"], plan: plan,
+                catalog: catalog, report: report, confirmRemovals: false)
+            check("a privileged app is skipped, never handed to InstallEngine",
+                  privilegedSelection.outcomes["install-privileged-app"]?.outcome == "skipped-privileged"
+                  && !privilegedSelection.apps.contains { $0.id == "privileged-app" })
+            check("a normal app in the same request still goes through",
+                  privilegedSelection.apps.contains { $0.id == "normal-app" }
+                  && privilegedSelection.pendingIDs.contains("install-normal-app"))
+
+            let manualID = plan.actions.first { $0.kind == .manualActionRequired || $0.kind == .unsupported }?.id
+            if let manualID {
+                let manual = RemediationSelector.select(
+                    requestedIDs: [manualID], plan: plan, catalog: catalog,
+                    report: report, confirmRemovals: false)
+                check("a manual/unsupported finding is skipped as not applicable",
+                      manual.outcomes[manualID]?.outcome == "skipped-not-applicable")
+            }
+
+            print("\n\(failed == 0 ? "all remediation-apply cases passed" : "\(failed) remediation-apply cases failed")")
+            exit(failed == 0 ? 0 : 1)
+        }
+
         if args.contains("--test-compat") {
             var failed = args.contains("--force-fail") ? 1 : 0
             func check(_ label: String, _ ok: Bool) {
@@ -1403,8 +1503,7 @@ enum Entry {
                         }
                         // Without root there is nobody to approve a package at
                         // midnight, so those are reported rather than attempted.
-                        if !amRoot, !allowPrompt,
-                           app.source.needsRoot || app.isBrewPackage || app.needsTerminal {
+                        if !amRoot, !allowPrompt, app.needsElevatedBatch {
                             skippedPrivileged.append(app.name); continue
                         }
                         eligible.append(app)
@@ -1771,6 +1870,173 @@ enum Entry {
             exit(0)
         }
 
+        if let i = args.firstIndex(of: "--remediation-plan") {
+            guard i + 1 < args.count else {
+                FileHandle.standardError.write(Data(
+                    "--remediation-plan needs a profile or role template name\n".utf8))
+                exit(2)
+            }
+            let name = args[i + 1]
+            let json = args.contains("--json")
+            let includeRemovals = args.contains("--include-removals")
+            runCLI { cat in
+                final class Flag { var done = false }
+                let flag = Flag()
+                Task { @MainActor in
+                    guard let report = await DesiredStateService.compare(
+                        name: name, profiles: ProfileStore().profiles, catalog: cat) else {
+                        FileHandle.standardError.write(Data(
+                            "no saved profile or role template named '\(name)'\n".utf8))
+                        exit(1)
+                    }
+                    let plan = RemediationPlanner.plan(from: report, includeRemovals: includeRemovals)
+                    if json {
+                        printJSON(plan)
+                    } else {
+                        printRemediationPlan(plan)
+                    }
+                    flag.done = true
+                }
+                while !flag.done {
+                    _ = RunLoop.main.run(mode: .default, before: Date().addingTimeInterval(0.05))
+                }
+            }
+            exit(0)
+        }
+
+        // Applies a subset of a freshly-computed remediation plan through the
+        // same InstallEngine the app's own "Apply" button uses. Nothing here
+        // ever attempts an action needing an administrator password — those
+        // are always reported back as skipped, never attempted, so this can
+        // never raise a surprise authorisation dialog when run unattended
+        // (e.g. from an MCP client). See docs/architecture-next.md.
+        if let i = args.firstIndex(of: "--apply-remediation") {
+            guard i + 1 < args.count else {
+                FileHandle.standardError.write(Data(
+                    "--apply-remediation needs a profile or role template name\n".utf8))
+                exit(2)
+            }
+            let name = args[i + 1]
+            let json = args.contains("--json")
+            let confirmRemovals = args.contains("--confirm-removals")
+            guard let ai = args.firstIndex(of: "--actions"), ai + 1 < args.count else {
+                FileHandle.standardError.write(Data(
+                    "--apply-remediation needs --actions <id1,id2,...>\n".utf8))
+                exit(2)
+            }
+            let requestedIDs = args[ai + 1].split(separator: ",").map(String.init).filter { !$0.isEmpty }
+            guard !requestedIDs.isEmpty else {
+                FileHandle.standardError.write(Data("--actions needs at least one action id\n".utf8))
+                exit(2)
+            }
+
+            runCLI { cat in
+                final class Flag { var done = false }
+                let flag = Flag()
+                Task { @MainActor in
+                    guard let report = await DesiredStateService.compare(
+                        name: name, profiles: ProfileStore().profiles, catalog: cat) else {
+                        FileHandle.standardError.write(Data(
+                            "no saved profile or role template named '\(name)'\n".utf8))
+                        exit(1)
+                    }
+                    // Always computed with removals visible — gating happens
+                    // inside RemediationSelector, per selected action, not here.
+                    let plan = RemediationPlanner.plan(from: report, includeRemovals: true)
+                    let byID = Dictionary(uniqueKeysWithValues: plan.actions.map { ($0.id, $0) })
+                    let selection = RemediationSelector.select(
+                        requestedIDs: requestedIDs, plan: plan, catalog: cat,
+                        report: report, confirmRemovals: confirmRemovals)
+
+                    var outcome: [String: String] = selection.outcomes.mapValues(\.outcome)
+                    var detail: [String: String] = selection.outcomes.mapValues(\.detail)
+
+                    // The generated script silently omits its entire web-app
+                    // section when no browser is given (ScriptGenerator.swift),
+                    // so without this a requested web app would just sit
+                    // pending forever and get reported as "failed".
+                    let browser = BrowserDetector.systemDefault()
+                    let webApps = browser != nil ? selection.webApps : []
+                    if browser == nil {
+                        let webAppIDs = Set(selection.webApps.map(\.id))
+                        for id in selection.pendingIDs where webAppIDs.contains(byID[id]?.targetID ?? "") {
+                            outcome[id] = "skipped-no-default-browser"
+                            detail[id] = "Could not detect a default browser to create this web app in."
+                        }
+                    }
+
+                    func absorb(_ items: [QueueItem]) {
+                        let byQueueID = Dictionary(items.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+                        for id in selection.pendingIDs where outcome[id] == nil {
+                            guard let qid = selection.queueItemID[id], let item = byQueueID[qid] else { continue }
+                            switch item.state {
+                            case .done: outcome[id] = "applied"
+                            case .failed: outcome[id] = "failed"
+                            case .skipped: outcome[id] = "skipped-already-satisfied"
+                            default: outcome[id] = "failed"
+                            }
+                            detail[id] = item.detail.isEmpty ? (byID[id]?.detail ?? "") : item.detail
+                        }
+                    }
+
+                    if !selection.apps.isEmpty || !selection.tweaks.isEmpty || !webApps.isEmpty {
+                        let engine = InstallEngine()
+                        engine.run(apps: selection.apps, tweaks: selection.tweaks, webApps: webApps, browser: browser)
+                        // Async sleep, not a RunLoop busy-wait: this yields the
+                        // MainActor so InstallEngine's own internal log-tailing
+                        // Task (also MainActor-isolated) actually gets to run.
+                        while !engine.finished {
+                            try? await Task.sleep(nanoseconds: 100_000_000)
+                        }
+                        absorb(engine.items)
+                    }
+
+                    if !selection.removals.isEmpty {
+                        let uninstallEngine = InstallEngine()
+                        uninstallEngine.runUninstall(targets: selection.removals)
+                        while !uninstallEngine.finished {
+                            try? await Task.sleep(nanoseconds: 100_000_000)
+                        }
+                        absorb(uninstallEngine.items)
+                    }
+
+                    // Anything still unresolved at this point named a valid,
+                    // confirmed action whose target no longer exists in the
+                    // catalogue (e.g. removed from catalog.json) — report it
+                    // rather than silently dropping it.
+                    for id in selection.pendingIDs where outcome[id] == nil {
+                        outcome[id] = "skipped-unresolved"
+                        detail[id] = "Could not be resolved back to a catalogue entry."
+                    }
+
+                    let results = requestedIDs.map { id -> RemediationApplyResult.ActionResult in
+                        let action = byID[id]
+                        return RemediationApplyResult.ActionResult(
+                            id: id, kind: action?.kind.rawValue ?? "unknown",
+                            title: action?.title ?? id,
+                            outcome: outcome[id] ?? "skipped-unresolved",
+                            detail: detail[id] ?? action?.detail ?? "")
+                    }
+                    let summary = RemediationApplyResult.Summary(
+                        applied: results.filter { $0.outcome == "applied" }.count,
+                        failed: results.filter { $0.outcome == "failed" }.count,
+                        skipped: results.filter { $0.outcome.hasPrefix("skipped") }.count)
+                    let applyResult = RemediationApplyResult(source: report.source, results: results, summary: summary)
+
+                    if json {
+                        printJSON(applyResult)
+                    } else {
+                        printApplyRemediationResult(applyResult)
+                    }
+                    flag.done = true
+                }
+                while !flag.done {
+                    _ = RunLoop.main.run(mode: .default, before: Date().addingTimeInterval(0.05))
+                }
+            }
+            exit(0)
+        }
+
         MacSetupApp.main()
     }
 
@@ -1807,6 +2073,44 @@ enum Entry {
                 print("  \(severity.rawValue.uppercased().padding(toLength: 9, withPad: " ", startingAt: 0)) \(r.title)  — \(r.details)")
             }
         }
+    }
+
+    private static func printRemediationPlan(_ plan: RemediationPlan) {
+        print("Remediation Plan — \(plan.source.name) (\(plan.source.kind.rawValue))\n")
+        if plan.actions.isEmpty {
+            print("  Nothing to do — everything checked is already compliant.")
+            return
+        }
+        for a in plan.actions {
+            let approval = a.requiresExplicitApproval ? "  [needs --confirm-removals]" : ""
+            print("  \(a.id.padding(toLength: 28, withPad: " ", startingAt: 0)) \(a.title)\(approval)")
+        }
+    }
+
+    private struct RemediationApplyResult: Codable {
+        struct ActionResult: Codable {
+            let id: String
+            let kind: String
+            let title: String
+            let outcome: String
+            let detail: String
+        }
+        struct Summary: Codable {
+            let applied: Int
+            let failed: Int
+            let skipped: Int
+        }
+        let source: DesiredStateSource
+        let results: [ActionResult]
+        let summary: Summary
+    }
+
+    private static func printApplyRemediationResult(_ r: RemediationApplyResult) {
+        print("Apply Remediation — \(r.source.name) (\(r.source.kind.rawValue))\n")
+        for a in r.results {
+            print("  \(a.outcome.uppercased().padding(toLength: 24, withPad: " ", startingAt: 0)) \(a.title)  — \(a.detail)")
+        }
+        print("\n  \(r.summary.applied) applied, \(r.summary.failed) failed, \(r.summary.skipped) skipped")
     }
 
     private static func printJSON(_ value: Encodable) {
@@ -1868,6 +2172,14 @@ enum Entry {
                                             List bundled Role Templates (name, group, summary)
           MacSetup --list-profiles [--json]
                                             List saved profile names
+          MacSetup --remediation-plan "<name>" [--include-removals] [--json]
+                                            Show what fixing a profile/Role Template's
+                                            gaps would involve — proposes only, changes nothing
+          MacSetup --apply-remediation "<name>" --actions id1,id2,... [--confirm-removals] [--json]
+                                            Apply selected actions from a remediation plan
+                                            (ids from --remediation-plan). Anything needing an
+                                            administrator password is always skipped, never
+                                            attempted; removals need --confirm-removals too
 
         Example:
           MacSetup --emit-script google-chrome,slack,rectangle > setup.sh
