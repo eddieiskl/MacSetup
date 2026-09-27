@@ -735,6 +735,19 @@ msu_make_webapp() {
     host=""
     msu_status "$id" installing "Creating $name.app for $bname"
   fi
+  # A web app's display name can coincidentally match a real installed
+  # application (e.g. a catalogue entry named "GitHub" landing on the same
+  # path as an unrelated app someone already has at /Applications/GitHub.app)
+  # — refuse to touch anything at $dir that isn't already one of MacSetup's
+  # own web app bundles, rather than blindly deleting whatever is there.
+  if [ -e "$dir" ]; then
+    local existing_id
+    existing_id=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$dir/Contents/Info.plist" 2>/dev/null)
+    if [ "$existing_id" != "local.macsetup.webapp.$id" ]; then
+      MSU_ERR="$dir already exists and isn't a MacSetup web app — not overwriting it"
+      return 1
+    fi
+  fi
   rm -rf "$dir"
   if ! mkdir -p "$dir/Contents/MacOS" "$dir/Contents/Resources"; then
     MSU_ERR="Could not create $dir"; return 1
