@@ -729,7 +729,13 @@ fi
 
 # The upgrade runs Apple's installer as root, so a dry run must start nothing
 # and the command must never carry a destructive flag.
-if $BIN --start-upgrade --dry-run >/tmp/st-up.txt 2>&1; then
+$BIN --start-upgrade --dry-run >/tmp/st-up.txt 2>&1
+UP_RC=$?
+if grep -q 'cannot start an upgrade from here' /tmp/st-up.txt; then
+  # Checked before the exit-code branch: this prints and exits 0 even when
+  # no macOS installer is cached, so gating on a non-zero exit never fires.
+  skip "no cached macOS installer to test the upgrade path"
+elif [ "$UP_RC" -eq 0 ]; then
   if grep -q 'dry run — nothing was started' /tmp/st-up.txt \
      && ! grep -q 'eraseinstall' /tmp/st-up.txt \
      && ! grep -q 'stdinpass' /tmp/st-up.txt; then
@@ -738,8 +744,6 @@ if $BIN --start-upgrade --dry-run >/tmp/st-up.txt 2>&1; then
     bad "the upgrade dry run starts nothing and passes no destructive flag" \
         "$(tail -2 /tmp/st-up.txt)"
   fi
-elif grep -q 'cannot start an upgrade from here' /tmp/st-up.txt; then
-  skip "no cached macOS installer to test the upgrade path"
 else
   bad "the upgrade dry run starts nothing" "$(tail -2 /tmp/st-up.txt)"
 fi
