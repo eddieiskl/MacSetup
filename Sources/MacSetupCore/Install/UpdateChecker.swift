@@ -1,7 +1,7 @@
 import Foundation
 import AppKit
 
-public enum UpdateState: Equatable {
+public enum UpdateState: Codable, Equatable {
     case upToDate(String)
     case available(installed: String, latest: String)
     case unknown(installed: String, reason: String)
@@ -9,7 +9,7 @@ public enum UpdateState: Equatable {
     public var isUpdate: Bool { if case .available = self { return true }; return false }
 }
 
-public struct UpdateResult: Identifiable, Equatable {
+public struct UpdateResult: Codable, Identifiable, Equatable {
     public let id: String            // catalogue app id
     public let name: String
     public let state: UpdateState

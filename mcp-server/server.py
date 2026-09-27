@@ -22,9 +22,10 @@ entirely inside the SDK's response-delivery path. The Python SDK is the
 project's reference implementation and doesn't exhibit this. See
 docs/architecture-next.md for the full writeup.
 
-Four tools (get_doctor_report, compare_desired_state, get_role_templates,
-get_profiles) are read-only. Two more (create_remediation_plan,
-apply_remediation) followed once that boundary was proven: the first only
+Nine tools (get_doctor_report, compare_desired_state, get_role_templates,
+get_profiles, get_system_info, get_installed_apps, search_catalog,
+get_updates, create_remediation_plan) are read-only. One more
+(apply_remediation) followed once that boundary was proven: the first only
 describes intent (no execution, ever); the second actually calls
 InstallEngine, through the same --apply-remediation CLI flag a person could
 type themselves. apply_remediation has hard safety rails baked into the CLI
@@ -173,6 +174,53 @@ def get_profiles() -> dict:
     """List the user's saved MacSetup profiles. Use this to find a valid
     name for compare_desired_state."""
     return {"profiles": _run_macsetup_json(["--list-profiles"])}
+
+
+@mcp.tool()
+def get_system_info() -> dict:
+    """Basic facts about this Mac: hostname, macOS version, and CPU
+    architecture (Apple Silicon or Intel). Read-only."""
+    return _run_macsetup_json(["--system-info"])
+
+
+@mcp.tool()
+def get_installed_apps() -> dict:
+    """List every application found on this Mac (name, version, bundle
+    identifier, path), flagging which ones are in the MacSetup catalogue.
+    Read-only — this only scans the filesystem, no network access."""
+    return {"apps": _run_macsetup_json(["--installed-apps"])}
+
+
+@mcp.tool()
+def search_catalog(query: str = "", category: str | None = None) -> dict:
+    """Search MacSetup's app catalogue by free text (matches name, vendor,
+    summary, id and tags) and/or category id. Use this to find a catalogue
+    id — for get_updates, or to check whether something is in the catalogue
+    at all. Pass an empty query with just a category to list everything in
+    it. Read-only.
+
+    Args:
+        query: Free-text search, e.g. "chrome" or "password manager". Empty
+            matches everything (combine with category to just list one).
+        category: A catalogue category id to restrict to (see the "id" field
+            in each entry — this tool doesn't have a separate category list;
+            an empty/unmatched category returns no results, not an error).
+    """
+    args = ["--search-catalog", query]
+    if category:
+        args += ["--category", category]
+    return {"apps": _run_macsetup_json(args)}
+
+
+@mcp.tool()
+def get_updates() -> dict:
+    """Check every installed catalogue app for a newer version. For each
+    one, reports whether it's up to date, has an update available
+    (installed vs. latest version), or couldn't be determined (reported as
+    such rather than guessed), plus how the latest version was found
+    (Homebrew, GitHub releases, the App Store, etc.). Read-only — this
+    only checks, it never installs anything."""
+    return {"results": _run_macsetup_json(["--check-updates"])}
 
 
 @mcp.tool()

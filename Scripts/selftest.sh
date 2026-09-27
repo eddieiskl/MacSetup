@@ -1232,6 +1232,35 @@ else
   bad "--doctor --json emits valid JSON" "$(tail -3 /tmp/st-doc.err)"
 fi
 
+if $BIN --system-info --json > /tmp/st-si.json 2>/tmp/st-si.err \
+   && python3 -m json.tool /tmp/st-si.json >/dev/null 2>&1; then
+  ok "--system-info --json emits valid JSON"
+else
+  bad "--system-info --json emits valid JSON" "$(tail -3 /tmp/st-si.err)"
+fi
+
+if $BIN --installed-apps --json > /tmp/st-ia.json 2>/tmp/st-ia.err \
+   && python3 -m json.tool /tmp/st-ia.json >/dev/null 2>&1; then
+  ok "--installed-apps --json emits valid JSON"
+else
+  bad "--installed-apps --json emits valid JSON" "$(tail -3 /tmp/st-ia.err)"
+fi
+
+if $BIN --search-catalog "chrome" --json > /tmp/st-sc.json 2>/tmp/st-sc.err \
+   && python3 -m json.tool /tmp/st-sc.json >/dev/null 2>&1 \
+   && python3 -c "import json; d=json.load(open('/tmp/st-sc.json')); assert any(a['id']=='google-chrome' for a in d)"; then
+  ok "--search-catalog --json finds a known app by name"
+else
+  bad "--search-catalog --json finds a known app by name" "$(tail -3 /tmp/st-sc.err)"
+fi
+
+if $BIN --check-updates --json > /tmp/st-cu.json 2>/tmp/st-cu.err \
+   && python3 -m json.tool /tmp/st-cu.json >/dev/null 2>&1; then
+  ok "--check-updates --json emits valid JSON"
+else
+  bad "--check-updates --json emits valid JSON" "$(tail -3 /tmp/st-cu.err)"
+fi
+
 # ---------------------------------------------------------------- summary
 printf '\n\033[1m────────────────────────────────────────────\033[0m\n'
 printf ' passed \033[32m%s\033[0m   failed \033[31m%s\033[0m   skipped \033[33m%s\033[0m\n' "$PASS" "$FAIL" "$SKIP"

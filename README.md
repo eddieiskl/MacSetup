@@ -45,13 +45,20 @@ through the system, and the trust boundaries the MCP server respects.
 ### MCP server
 
 `mcp-server/server.py` is a small Python MCP server (the [official Python
-SDK](https://github.com/modelcontextprotocol/python-sdk)) exposing six
-tools — four read-only, two that can make real changes on this Mac (see
+SDK](https://github.com/modelcontextprotocol/python-sdk)) exposing ten
+tools — nine read-only, one that can make real changes on this Mac (see
 below). It's a thin adapter, not a reimplementation: every tool just shells
 out to the `MacSetup` CLI's existing `--json` flags and returns that JSON.
 **MacSetupCore stays the only place any of this logic lives** — Python holds
 none of it.
 
+- `get_system_info` — hostname, macOS version, CPU architecture (`MacSetup --system-info --json`).
+- `get_installed_apps` — every app found on this Mac, flagged against the
+  catalogue (`MacSetup --installed-apps --json`).
+- `search_catalog` — free-text/category search over the catalogue
+  (`MacSetup --search-catalog <query> [--category <id>] --json`).
+- `get_updates` — check every installed catalogue app for a newer version
+  (`MacSetup --check-updates --json`).
 - `get_doctor_report` — run Doctor's health checks (`MacSetup --doctor --json`).
 - `compare_desired_state` — compare a named profile or Role Template against
   this Mac (`MacSetup --compare-profile <name> --json`).
@@ -414,6 +421,10 @@ MacSetup.app/Contents/MacOS/MacSetup --doctor
 MacSetup.app/Contents/MacOS/MacSetup --doctor --json
 MacSetup.app/Contents/MacOS/MacSetup --list-role-templates --json
 MacSetup.app/Contents/MacOS/MacSetup --list-profiles --json
+MacSetup.app/Contents/MacOS/MacSetup --system-info --json
+MacSetup.app/Contents/MacOS/MacSetup --installed-apps --json
+MacSetup.app/Contents/MacOS/MacSetup --search-catalog "password manager" --json
+MacSetup.app/Contents/MacOS/MacSetup --check-updates --json
 MacSetup.app/Contents/MacOS/MacSetup --remediation-plan "Dev" --json
 MacSetup.app/Contents/MacOS/MacSetup --apply-remediation "Dev" --actions install-slack,tweak-finder-show-extensions --json
 ```

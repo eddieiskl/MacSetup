@@ -16,6 +16,21 @@ public struct Catalog: Codable {
     public var webAppList: [WebApp] { webApps ?? [] }
     public var roleTemplateList: [RoleTemplate] { roleTemplates ?? [] }
 
+    /// The same free-text/category filter the app's own catalogue browser
+    /// uses (`AppState.computeFilteredApps`), lifted here so the CLI and MCP
+    /// server can search without duplicating it. Deliberately just the two
+    /// most fundamental filters — the UI's other toggles (tags, license,
+    /// source, hide-installed, hide-admin-required) are display conveniences
+    /// tied to live UI state, not something a name/category lookup needs.
+    public func search(query: String, category: String? = nil) -> [CatalogApp] {
+        let needle = query.trimmingCharacters(in: .whitespaces).lowercased()
+        return apps.filter { app in
+            if let category, app.category != category { return false }
+            if !needle.isEmpty, !app.searchHaystack.contains(needle) { return false }
+            return true
+        }
+    }
+
     public init(schemaVersion: Int, updated: String, categories: [AppCategory], apps: [CatalogApp],
                 systemDefaults: [DefaultTweak], webApps: [WebApp]?, roleTemplates: [RoleTemplate]?) {
         self.schemaVersion = schemaVersion
@@ -234,7 +249,7 @@ public struct UninstallTarget: Identifiable, Hashable {
 }
 
 /// An application found on this Mac.
-public struct InstalledEntry: Identifiable, Hashable {
+public struct InstalledEntry: Codable, Identifiable, Hashable {
     public let id: String
     public let name: String
     public let bundleID: String

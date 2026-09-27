@@ -1633,8 +1633,15 @@ enum Entry {
                 Task { @MainActor in
                     let notify = args.contains("--notify")
                     let quiet = args.contains("--quiet")
+                    let json = args.contains("--json")
                     let checker = UpdateChecker()
                     await checker.check(apps: cat.apps)
+
+                    if json {
+                        printJSON(checker.results)
+                        flag.done = true
+                        return
+                    }
 
                     if notify {
                         let n = checker.updates.count
@@ -1866,6 +1873,69 @@ enum Entry {
             }
             while !flag.done {
                 _ = RunLoop.main.run(mode: .default, before: Date().addingTimeInterval(0.05))
+            }
+            exit(0)
+        }
+
+        if args.contains("--system-info") {
+            let json = args.contains("--json")
+            let summary = MachineSummary.current()
+            if json {
+                printJSON(summary)
+            } else {
+                print("\(summary.hostName) — macOS \(summary.macOSVersion) (\(summary.architecture.display))")
+            }
+            exit(0)
+        }
+
+        if args.contains("--installed-apps") {
+            let json = args.contains("--json")
+            runCLI { cat in
+                final class Flag { var done = false }
+                let flag = Flag()
+                Task { @MainActor in
+                    let entries = await MachineInventory.scan(catalogApps: cat.apps)
+                    if json {
+                        printJSON(entries)
+                    } else if entries.isEmpty {
+                        print("No applications found.")
+                    } else {
+                        for e in entries.sorted(by: { $0.name < $1.name }) {
+                            let cataloged = e.inCatalogue ? "  [\(e.catalogID ?? "")]" : ""
+                            print("\(e.name)\(e.version.isEmpty ? "" : " \(e.version)")\(cataloged)")
+                        }
+                    }
+                    flag.done = true
+                }
+                while !flag.done {
+                    _ = RunLoop.main.run(mode: .default, before: Date().addingTimeInterval(0.05))
+                }
+            }
+            exit(0)
+        }
+
+        if let i = args.firstIndex(of: "--search-catalog") {
+            guard i + 1 < args.count else {
+                FileHandle.standardError.write(Data("--search-catalog needs a query (may be empty string)\n".utf8))
+                exit(2)
+            }
+            let query = args[i + 1]
+            let json = args.contains("--json")
+            var category: String?
+            if let ci = args.firstIndex(of: "--category"), ci + 1 < args.count {
+                category = args[ci + 1]
+            }
+            runCLI { cat in
+                let results = cat.search(query: query, category: category)
+                if json {
+                    printJSON(results)
+                } else if results.isEmpty {
+                    print("No matches.")
+                } else {
+                    for a in results {
+                        print("\(a.id.padding(toLength: 26, withPad: " ", startingAt: 0)) \(a.name) — \(a.summary)")
+                    }
+                }
             }
             exit(0)
         }
@@ -2149,7 +2219,7 @@ enum Entry {
                                             Inspect or change the scheduled run
                                             e.g. --schedule set --hour 14 --action prompt
           MacSetup --check-system           List pending macOS and Apple updates
-          MacSetup --check-updates [--notify] [--quiet]
+          MacSetup --check-updates [--notify] [--quiet] [--json]
                                             List installed apps with newer versions;
                                             --notify posts a macOS notification
           MacSetup --test-versions          Self-test the version comparator
@@ -2172,6 +2242,12 @@ enum Entry {
                                             List bundled Role Templates (name, group, summary)
           MacSetup --list-profiles [--json]
                                             List saved profile names
+          MacSetup --system-info [--json]   Hostname, macOS version, architecture
+          MacSetup --installed-apps [--json]
+                                            List every application found on this Mac,
+                                            flagging which ones are in the catalogue
+          MacSetup --search-catalog "<query>" [--category <id>] [--json]
+                                            Search the catalogue by free text and/or category
           MacSetup --remediation-plan "<name>" [--include-removals] [--json]
                                             Show what fixing a profile/Role Template's
                                             gaps would involve — proposes only, changes nothing

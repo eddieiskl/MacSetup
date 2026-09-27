@@ -189,10 +189,10 @@ subprocess invocation, and error passthrough.
 | `get_profiles` | `--list-profiles --json` → `ProfileStore` | ✅ implemented (discovery helper) |
 | `create_remediation_plan` | `--remediation-plan <name> [--include-removals] --json` → `RemediationPlanner.plan(from:includeRemovals:)` | ✅ implemented, read-only (proposal only) |
 | `apply_remediation` | `--apply-remediation <name> --actions <ids> [--confirm-removals] --json` → `RemediationSelector.select` + `InstallEngine.run`/`.runUninstall` | ✅ implemented, **mutating** — see below |
-| `get_system_info` | — → `MachineSummary.current()` | not yet — trivial, small follow-up |
-| `get_installed_apps` | — → `MachineInventory.scan(catalogApps:)` | not yet — trivial, small follow-up |
-| `search_catalog` | — → `Catalog.apps` filtered the way `AppState`'s own filter already does (not yet lifted into Core as a standalone helper) | not yet |
-| `get_updates` | — → `UpdateChecker.check(apps:)` | not yet |
+| `get_system_info` | `--system-info --json` → `MachineSummary.current()` | ✅ implemented, read-only |
+| `get_installed_apps` | `--installed-apps --json` → `MachineInventory.scan(catalogApps:)` | ✅ implemented, read-only |
+| `search_catalog` | `--search-catalog <query> [--category <id>] --json` → `Catalog.search(query:category:)` | ✅ implemented, read-only |
+| `get_updates` | `--check-updates --json` → `UpdateChecker.check(apps:)` | ✅ implemented, read-only |
 
 `DesiredStateService` (`Sources/MacSetupCore/DesiredState/DesiredStateService.swift`)
 is the one place that resolves a name to a profile/template and gathers the
